@@ -4,18 +4,28 @@ import android.content.Context
 import android.content.Intent
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
+import android.widget.Toast
 
 class MainActivity : AppCompatActivity() {
     companion object {
         const val  LAST_ZIP_PATH_KEY = "last_zip_path"
+        fun lastZipPath(ctx: Context) = sharedPreferences(ctx).getString(LAST_ZIP_PATH_KEY, null)
+        fun writeLastZipPath(ctx: Context, path : String) = sharedPreferences(ctx).edit()
+                .putString(LAST_ZIP_PATH_KEY, path)
+                .commit()
+
+        private fun sharedPreferences(ctx: Context) = ctx.getSharedPreferences("ZSCR_PREFS", Context.MODE_PRIVATE)
+
+        fun showMessage(ctx: Context, msg : String) = Toast.makeText(ctx, msg, Toast.LENGTH_SHORT).show()
+
     }
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val zipPath = getSharedPreferences("ZSCR_PREFS", Context.MODE_PRIVATE).getString(LAST_ZIP_PATH_KEY, "")
-        if("" != zipPath) {
+        val zipPath = lastZipPath(this)
+        if(null != zipPath) {
             val intent = Intent(this, SearchActivity::class.java)
             startActivity(intent)
             finish()

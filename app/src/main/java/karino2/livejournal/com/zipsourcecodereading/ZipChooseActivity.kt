@@ -23,10 +23,8 @@ class ZipChooseActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_zip_choose)
 
-        val zipPath = getSharedPreferences("ZSCR_PREFS", Context.MODE_PRIVATE).getString(MainActivity.LAST_ZIP_PATH_KEY, "")
-        if(zipPath != "") {
-            zipPathField.setText(zipPath)
-        }
+        val zipPath = MainActivity.lastZipPath(this)
+        zipPath?.let{ zipPathField.setText(zipPath) }
 
         findViewById(R.id.browseZipButton).setOnClickListener { _ ->
             val intent = Intent(Intent.ACTION_GET_CONTENT)
@@ -35,13 +33,17 @@ class ZipChooseActivity : AppCompatActivity() {
         }
 
         findViewById(R.id.indexStartButton).setOnClickListener { _ ->
-            showMessage("deb: " + zipPathField.text.toString())
+            val path = zipPathField.text.toString()
+            MainActivity.writeLastZipPath(this, path)
+            val intent = Intent(this, SearchActivity::class.java)
+            startActivity(intent)
+            finish()
         }
 
     }
-    fun showMessage(msg : String) {
-        Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
-    }
+    fun showMessage(msg : String) = MainActivity.showMessage(this, msg)
+
+
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         when(requestCode) {
             REQUEST_PICK_ZIP ->{
