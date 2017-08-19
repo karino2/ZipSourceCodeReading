@@ -8,14 +8,39 @@ import android.view.Menu
 import android.view.MenuItem
 import android.view.inputmethod.EditorInfo
 import android.widget.EditText
+import android.widget.TextView
+import io.reactivex.Observable
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.schedulers.Schedulers
+import java.io.BufferedReader
+import java.io.InputStreamReader
+import java.util.zip.ZipEntry
+import java.util.zip.ZipFile
 
 class SearchActivity : AppCompatActivity() {
+
+    val sourceArchive : SourceArchive by lazy {
+        SourceArchive(ZipFile(MainActivity.lastZipPath(this)))
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_search)
 
         assert(MainActivity.lastZipPath(this) != null)
+
+        findViewById(R.id.goButton).setOnClickListener {
+
+            val cond = (findViewById(R.id.fileEntryField) as EditText).text.toString()
+
+            sourceArchive.listFiles()
+                    .filter{ it.name.contains(cond) }
+                    .take(1)
+                    .subscribeOn(Schedulers.io())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe { ent -> openFile(ent) }
+
+        }
 
         /*
         (findViewById(R.id.fileEntryField) as EditText).setOnEditorActionListener(fun (textView, actionId, keyEvent) : Boolean{
@@ -38,6 +63,13 @@ class SearchActivity : AppCompatActivity() {
             return false
         })
         */
+    }
+
+    private fun  openFile(ent: ZipEntry) {
+        val reader = BufferedReader(InputStreamReader(sourceArchive.getInputStream(ent)), 8*1024)
+
+        val lines = reader.readLines()
+        (findViewById(R.id.contentArea) as TextView).text = lines.joinToString("\n")
     }
 
     fun showMessage(msg : String) = MainActivity.showMessage(this, msg)
