@@ -20,7 +20,8 @@
             </intent-filter>
         </activity>
         <activity android:name=".SearchActivity" />
-        <activity android:name=".ZipChooseActivity"></activity>
+        <activity android:name=".ZipChooseActivity" />
+        <activity android:name=".SourceViewActivity"></activity>
     </application>
 
 </manifest>

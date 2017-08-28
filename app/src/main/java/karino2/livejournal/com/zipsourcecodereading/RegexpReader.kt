@@ -2,8 +2,6 @@ package karino2.livejournal.com.zipsourcecodereading
 
 import com.google.re2j.Matcher
 import com.google.re2j.Pattern
-import io.airlift.slice.Slice
-import io.airlift.slice.Slices
 import io.reactivex.Observable
 import java.io.InputStream
 import java.io.Reader
@@ -60,7 +58,7 @@ class RegexpReader(val pat : Pattern) {
 
             var chunkStart = 0
             while (chunkStart < end) {
-                val slice = Slices.wrappedBuffer(buf, chunkStart, end)
+                val slice = Slice.wrappedBuffer(buf, chunkStart, end-chunkStart)
                 val matcher = pat.matcher(slice)
 
                 if (!matcher.find())

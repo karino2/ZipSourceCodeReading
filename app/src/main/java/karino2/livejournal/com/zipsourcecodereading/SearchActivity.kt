@@ -66,10 +66,15 @@ class SearchActivity : AppCompatActivity() {
     }
 
     private fun  openFile(ent: ZipEntry) {
+        val intent = Intent(this, SourceViewActivity::class.java)
+        intent.putExtra("ZIP_FILE_ENTRY", ent.toString())
+        startActivity(intent)
+        /*
         val reader = BufferedReader(InputStreamReader(sourceArchive.getInputStream(ent)), 8*1024)
 
         val lines = reader.readLines()
         (findViewById(R.id.contentArea) as TextView).text = lines.joinToString("\n")
+        */
     }
 
     fun showMessage(msg : String) = MainActivity.showMessage(this, msg)
