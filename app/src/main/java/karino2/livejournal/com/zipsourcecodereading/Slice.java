@@ -14,6 +14,12 @@ public class Slice {
         this.length = len;
     }
 
+    public void set(byte[] buf, int offset, int len) {
+        this.buf = buf;
+        this.offset = offset;
+        this.length = len;
+    }
+
     static Slice _EMPTY_SLICE = null;
     public static Slice getEmptySlice() {
         if(_EMPTY_SLICE == null){

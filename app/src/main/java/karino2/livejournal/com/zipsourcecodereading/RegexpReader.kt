@@ -57,8 +57,10 @@ class RegexpReader(val pat : Pattern) {
             }
 
             var chunkStart = 0
+            val slice = Slice.wrappedBuffer(buf, chunkStart, end-chunkStart)
+
             while (chunkStart < end) {
-                val slice = Slice.wrappedBuffer(buf, chunkStart, end-chunkStart)
+                slice.set(buf, chunkStart, end-chunkStart)
                 val matcher = pat.matcher(slice)
 
                 if (!matcher.find())
