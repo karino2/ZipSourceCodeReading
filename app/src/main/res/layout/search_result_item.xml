@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="wrap_content">
+
+    <TextView
+        android:id="@+id/lineNumber"
+        android:layout_width="40sp"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:text="2048" />
+
+    <TextView
+        android:id="@+id/matchLine"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:layout_below="@+id/lineNumber"
+        android:paddingBottom="4dp"
+        android:text="This is matched line"
+        android:textAppearance="@style/TextAppearance.AppCompat.Body1"
+        android:textSize="18sp" />
+
+    <TextView
+        android:id="@+id/filePath"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/matchLine"
+        android:layout_toEndOf="@+id/lineNumber"
+        android:text="test/README.md" />
+</RelativeLayout>
