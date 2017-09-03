@@ -2,6 +2,8 @@ package karino2.livejournal.com.zipsourcecodereading
 
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
+import android.os.Handler
+import android.widget.ScrollView
 import android.widget.TextView
 import java.io.BufferedReader
 import java.io.InputStreamReader
@@ -20,17 +22,28 @@ class SourceViewActivity : AppCompatActivity() {
 
         intent?.let {
             val zipEntryName = intent.getStringExtra("ZIP_FILE_ENTRY")
-            openFile(zipEntryName)
+            val lineNum = intent.getIntExtra("LINE_NUM", 0)
+            openFile(zipEntryName, lineNum)
         }
 
     }
 
-    private fun  openFile(zipEntryName: String) {
+    val handler by lazy {
+        Handler()
+    }
+
+    private fun  openFile(zipEntryName: String, lineNum : Int) {
         val ent = ZipEntry(zipEntryName)
         val reader = BufferedReader(InputStreamReader(sourceArchive.getInputStream(ent)), 8*1024)
 
         val lines = reader.readLines()
-        (findViewById(R.id.sourceTextView) as TextView).text = lines.joinToString("\n")
+        val tv = (findViewById(R.id.sourceTextView) as TextView)
+        tv.text = lines.joinToString("\n")
+
+        handler.post {
+            val sv = findViewById(R.id.scrollView) as ScrollView
+            sv.scrollTo(0, tv.layout.getLineTop(lineNum))
+        }
 
     }
 }

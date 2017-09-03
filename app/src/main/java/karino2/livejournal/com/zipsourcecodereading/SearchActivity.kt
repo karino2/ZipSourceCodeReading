@@ -36,14 +36,14 @@ class SearchActivity : AppCompatActivity() {
     inner class MatchEntryAdapter : ObserverAdapter<RegexpReader.MatchEntry, ViewHolder>() {
         override fun onBindViewHolder(holder: ViewHolder, position: Int) {
             val item = items[position]
-            // holder.lineNumberTV.text = (item.lineNumber!!).toString()
-            holder.lineNumberTV.text = "___"
+            holder.lineNumberTV.text = (item.lineNumber!!).toString()
+            // holder.lineNumberTV.text = "___"
             holder.filePathTV.text = item.fentry
             holder.matchLineTV.text = item.line
 
             with(holder.view) {
                 tag = item
-                setOnClickListener { openFile(holder.filePathTV.text.toString()) }
+                setOnClickListener { openFile(holder.filePathTV.text.toString(),  holder.lineNumberTV.text.toString().toInt()) }
             }
         }
 
@@ -90,7 +90,7 @@ class SearchActivity : AppCompatActivity() {
 
         val obs = sourceArchive.listFiles()
                 .filter{  ffilter(it.name) }
-                .flatMap{ reader.Read(sourceArchive.getInputStream(it), it.toString(), null) }
+                .flatMap{ reader.Read(sourceArchive.getInputStream(it), it.toString(), 0) }
                 .subscribeOn(Schedulers.io())
                 .buffer(1, TimeUnit.SECONDS, 5)
 
@@ -143,9 +143,10 @@ class SearchActivity : AppCompatActivity() {
         imm.hideSoftInputFromWindow(currentFocus.windowToken, 0)
     }
 
-    private fun  openFile(ent: String) {
+    private fun  openFile(ent: String, lineNum: Int) {
         val intent = Intent(this, SourceViewActivity::class.java)
         intent.putExtra("ZIP_FILE_ENTRY", ent)
+        intent.putExtra("LINE_NUM", lineNum)
         startActivity(intent)
     }
 
