@@ -140,7 +140,6 @@ class SearchActivity : AppCompatActivity() {
 
         (findViewById(R.id.searchEntryField) as EditText).setOnEditorActionListener(fun(view, actionId, keyEvent)  : Boolean {
             if(actionId == EditorInfo.IME_ACTION_SEARCH) {
-                showMessage("deb: ")
                 startSearch()
                 return true;
             }

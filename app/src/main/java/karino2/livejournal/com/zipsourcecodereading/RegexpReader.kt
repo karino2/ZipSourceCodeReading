@@ -69,7 +69,11 @@ class RegexpReader(val pat : Pattern) {
                 val matchpos = matcher.start() + chunkStart
                 val lineEnd = findEol(buf, matchpos, end, endText) ?: break
 
-                val lineStart = findLastIndexOfRange(buf, nl, chunkStart, matchpos)+1
+                var lineStart = findLastIndexOfRange(buf, nl, chunkStart, matchpos)+1
+                if(lineStart == 0) {
+                    lineStart = chunkStart
+                }
+
 
                 lineNumber?.let { lineNumber += countNL(buf, chunkStart, lineStart) }
 

@@ -33,6 +33,20 @@ fxy
         assertEquals(3, mat.lineNumber)
     }
 
+    @Test public fun matchTwoConsecutiveLine() {
+        val content = """abc
+abc def
+xyz ab de
+fxy
+"""
+
+        val patText = "(?m)abc"
+        val matches = executeRead(content, patText)
+
+        assertEquals(2, matches.size)
+        assertEquals("abc def", matches.get(1).line)
+    }
+
     @Test public fun read_matchLastLine() {
         val content = """First line
 fxy"""
