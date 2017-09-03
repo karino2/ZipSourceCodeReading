@@ -19,7 +19,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".SearchActivity" />
+        <activity android:name=".SearchActivity" android:theme="@style/Theme.AppCompat.Light.NoActionBar" />
         <activity android:name=".ZipChooseActivity" />
         <activity android:name=".SourceViewActivity"></activity>
     </application>

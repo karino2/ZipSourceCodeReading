@@ -4,17 +4,15 @@ import android.content.Intent
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.support.v7.widget.RecyclerView
+import android.support.v7.widget.Toolbar
 import android.view.*
 import android.view.inputmethod.EditorInfo
 import android.widget.EditText
 import android.widget.TextView
 import com.google.re2j.Pattern
-import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.Disposable
 import io.reactivex.schedulers.Schedulers
-import java.io.BufferedReader
-import java.io.InputStreamReader
 import java.util.concurrent.TimeUnit
 import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
@@ -59,6 +57,15 @@ class SearchActivity : AppCompatActivity() {
 
     var prevSearch : Disposable? = null
 
+    fun showSearchingIndicator() {
+        (findViewById(R.id.progressBar)).visibility = View.VISIBLE
+    }
+
+    fun hideSearchingIndicator() {
+        (findViewById(R.id.progressBar)).visibility = View.GONE
+
+    }
+
     fun startSearch() {
         prevSearch?.dispose()
         prevSearch = null
@@ -86,7 +93,13 @@ class SearchActivity : AppCompatActivity() {
                 .subscribeOn(Schedulers.io())
                 .buffer(1, TimeUnit.SECONDS, 5)
 
+        showSearchingIndicator()
+
         prevSearch = obs.observeOn(AndroidSchedulers.mainThread())
+                .doOnComplete {
+                    prevSearch=null
+                    hideSearchingIndicator()
+                }
                 .subscribe { matches ->
                     if (matches.size > 0)
                         searchAdapter.addAll(matches)
@@ -97,6 +110,9 @@ class SearchActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_search)
+
+        val toolbar = (findViewById(R.id.toolbar) as Toolbar)
+        setSupportActionBar(toolbar)
 
         assert(MainActivity.lastZipPath(this) != null)
 
