@@ -11,6 +11,7 @@ import android.widget.TextView
 import com.google.re2j.Pattern
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.Disposable
 import io.reactivex.schedulers.Schedulers
 import java.io.BufferedReader
 import java.io.InputStreamReader
@@ -56,8 +57,11 @@ class SearchActivity : AppCompatActivity() {
 
     val searchAdapter = MatchEntryAdapter()
 
+    var prevSearch : Disposable? = null
+
     fun startSearch() {
-        // TODO: cancel here.
+        prevSearch?.dispose()
+        prevSearch = null
 
 
         searchAdapter.items.clear()
@@ -82,7 +86,7 @@ class SearchActivity : AppCompatActivity() {
                 .subscribeOn(Schedulers.io())
                 .buffer(1, TimeUnit.SECONDS, 5)
 
-                 obs.observeOn(AndroidSchedulers.mainThread())
+        prevSearch = obs.observeOn(AndroidSchedulers.mainThread())
                 .subscribe { matches ->
                     if (matches.size > 0)
                         searchAdapter.addAll(matches)
