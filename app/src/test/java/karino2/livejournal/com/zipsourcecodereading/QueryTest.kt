@@ -7,7 +7,7 @@ import org.junit.Assert.*
 
 class QueryTest {
 
-    // @Test
+    @Test
     fun singleTest() {
         val expect = "\"Abc\" \"bcd\" \"cde\" \"def\""
         val re = Parser.parse("Abcdef", RE2.PERL)
@@ -105,9 +105,7 @@ class QueryTest {
             TE("(?i)abc","(\"ABC\"|\"ABc\"|\"AbC\"|\"Abc\"|\"aBC\"|\"aBc\"|\"abC\"|\"abc\")"),
             TE("(?i)abc|def","(\"ABC\"|\"ABc\"|\"AbC\"|\"Abc\"|\"DEF\"|\"DEf\"|\"DeF\"|\"Def\"|\"aBC\"|\"aBc\"|\"abC\"|\"abc\"|\"dEF\"|\"dEf\"|\"deF\"|\"def\")"),
             TE("(?i)abcd","(\"ABC\"|\"ABc\"|\"AbC\"|\"Abc\"|\"aBC\"|\"aBc\"|\"abC\"|\"abc\") (\"BCD\"|\"BCd\"|\"BcD\"|\"Bcd\"|\"bCD\"|\"bCd\"|\"bcD\"|\"bcd\")"),
-            TE("(?i)abc|abc","(\"ABC\"|\"ABc\"|\"AbC\"|\"Abc\"|\"aBC\"|\"aBc\"|\"abC\"|\"abc\")"),
-
-            TE("abc", "\"abc\"")
+            TE("(?i)abc|abc","(\"ABC\"|\"ABc\"|\"AbC\"|\"Abc\"|\"aBC\"|\"aBc\"|\"abC\"|\"abc\")")
     )
     @Test
     fun expandEntriesTests() {
