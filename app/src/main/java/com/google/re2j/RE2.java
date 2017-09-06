@@ -51,30 +51,30 @@ import static com.google.re2j.RE2.MatchKind.LONGEST_MATCH;
  * API, and the <a href='package-summary.html'>package-level
  * documentation</a> for an overview of how to use this API.
  */
-class RE2 {
+public class RE2 {
 
   // (In the Go implementation this structure is just called "Regexp".)
 
   //// Parser flags.
 
   // Fold case during matching (case-insensitive).
-  static final int FOLD_CASE            = 0x01;
+  public static final int FOLD_CASE            = 0x01;
 
   // Treat pattern as a literal string instead of a regexp.
-  static final int LITERAL              = 0x02;
+  public static final int LITERAL              = 0x02;
 
   // Allow character classes like [^a-z] and [[:space:]] to match newline.
-  static final int CLASS_NL             = 0x04;
+  public static final int CLASS_NL             = 0x04;
 
   // Allow '.' to match newline.
-  static final int DOT_NL               = 0x08;
+  public static final int DOT_NL               = 0x08;
 
   // Treat ^ and $ as only matching at beginning and end of text, not
   // around embedded newlines.  (Perl's default).
-  static final int ONE_LINE             = 0x10;
+  public static final int ONE_LINE             = 0x10;
 
   // Make repetition operators default to non-greedy.
-  static final int NON_GREEDY           = 0x20;
+  public static final int NON_GREEDY           = 0x20;
 
   // allow Perl extensions:
   //   non-capturing parens - (?: )
@@ -88,21 +88,21 @@ class RE2 {
   //   \Q and \E to disable/enable metacharacters
   //   (?P<name>expr) for named captures
   // \C (any byte) is not supported.
-  static final int PERL_X               = 0x40;
+  public static final int PERL_X               = 0x40;
 
   // Allow \p{Han}, \P{Han} for Unicode group and negation.
-  static final int UNICODE_GROUPS       = 0x80;
+  public static final int UNICODE_GROUPS       = 0x80;
 
   // Regexp END_TEXT was $, not \z.  Internal use only.
-  static final int WAS_DOLLAR           = 0x100;
+  public static final int WAS_DOLLAR           = 0x100;
 
-  static final int MATCH_NL             = CLASS_NL | DOT_NL;
+  public static final int MATCH_NL             = CLASS_NL | DOT_NL;
 
   // As close to Perl as possible.
-  static final int PERL = CLASS_NL | ONE_LINE | PERL_X | UNICODE_GROUPS;
+  public static final int PERL = CLASS_NL | ONE_LINE | PERL_X | UNICODE_GROUPS;
 
   // POSIX syntax.
-  static final int POSIX = 0;
+  public static final int POSIX = 0;
 
   //// Anchors
   enum Anchor {

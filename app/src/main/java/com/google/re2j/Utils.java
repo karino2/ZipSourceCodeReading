@@ -12,7 +12,7 @@ import static com.google.re2j.MachineInput.EOF;
 /**
  * Various constants and helper utilities.
  */
-abstract class Utils {
+public abstract class Utils {
 
   static final int[] EMPTY_INTS = {};
 
@@ -87,11 +87,12 @@ abstract class Utils {
   }
 
   // Returns the Java UTF-16 string containing the single rune |r|.
-  static String runeToString(int r) {
+  public static String runeToString(int r) {
     char c = (char) r;
     return r == c
         ? String.valueOf(c)
-        : new String(Character.toChars(c));
+        : new String(Character.toChars(r));
+        // fix by karino : new String(Character.toChars(c));
   }
 
   // Returns a new copy of the specified subarray.

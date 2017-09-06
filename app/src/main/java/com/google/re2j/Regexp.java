@@ -17,9 +17,9 @@ import java.util.Map;
  * NB, this corresponds to {@code syntax.regexp} in the Go implementation;
  * Go's {@code regexp} is called {@code RE2} in Java.
  */
-class Regexp {
+public class Regexp {
 
-  enum Op {
+  public enum Op {
     NO_MATCH,           // Matches no strings.
     EMPTY_MATCH,        // Matches empty string.
     LITERAL,            // Matches runes[] sequence
@@ -51,6 +51,15 @@ class Regexp {
 
   static final Regexp[] EMPTY_SUBS = {};
 
+  public Op getOp() { return op; }
+  public int getFlags() { return flags; }
+  public void setFlags(int flags) { this.flags = flags; }
+  public int[] getRunes() { return runes; }
+  public void setRunes(int[] runes) { this.runes = runes; }
+  public Regexp[] getSubs() { return subs; }
+  public int getMin() { return min; }
+
+
   Op op;                   // operator
   int flags;               // bitmap of parse flags
   Regexp[] subs;           // subexpressions, if any.  Never null.
@@ -61,7 +70,7 @@ class Regexp {
   String name;             // capturing name, for CAPTURE
   // Do update copy ctor when adding new fields!
 
-  Regexp(Op op) {
+  public Regexp(Op op) {
     this.op = op;
   }
 

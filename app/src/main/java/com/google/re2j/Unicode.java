@@ -14,7 +14,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  *
  * @author adonovan@google.com (Alan Donovan)
  */
-class Unicode {
+public class Unicode {
 
   // Rune and UTF8 sequences are the same.
   static final int RUNE_SELF = 0x80;
@@ -222,7 +222,7 @@ class Unicode {
   //
   // Derived from Go's unicode.SimpleFold.
   //
-  static int simpleFold(int r) {
+  public static int simpleFold(int r) {
     // Consult caseOrbit table for special cases.
     int lo = 0;
     int hi = UnicodeTables.CASE_ORBIT.length;

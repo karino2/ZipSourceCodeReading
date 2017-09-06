@@ -9,7 +9,7 @@ import java.io.ByteArrayInputStream
 /**
  * Created by _ on 2017/08/27.
  */
-public class RegexpReaderTest {
+class RegexpReaderTest {
 
 
     @Test public fun readBasic() {
@@ -45,6 +45,20 @@ fxy
 
         assertEquals(2, matches.size)
         assertEquals("abc def", matches.get(1).line)
+    }
+
+    // for investigation
+    @Test fun regexpTest() {
+        //                 TE("(a|ab)cde","\"cde\" (\"abc\" \"bcd\")|(\"acd\")")
+        val content = "abcde"
+        val patText= "(?m)(a|ab)cde"
+
+        val matches = executeRead(content, patText)
+
+        assertEquals(1, matches.size)
+        val mat = matches.get(0)
+
+        assertEquals("abcde", mat.line)
     }
 
     @Test public fun read_matchLastLine() {

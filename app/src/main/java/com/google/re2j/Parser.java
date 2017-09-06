@@ -18,7 +18,7 @@ import java.util.ArrayList;
  *
  * The only public entry point is {@link #parse(String pattern, int flags)}.
  */
-class Parser {
+public class Parser {
 
   // Unexpected error
   private static final String ERR_INTERNAL_ERROR =
@@ -795,7 +795,7 @@ class Parser {
    * Parse regular expression pattern {@var pattern} with mode flags
    * {@var flags}.
    */
-  static Regexp parse(String pattern, int flags)
+  public static Regexp parse(String pattern, int flags)
       throws PatternSyntaxException {
     return new Parser(pattern, flags).parseInternal();
   }
