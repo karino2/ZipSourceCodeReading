@@ -72,6 +72,13 @@ object Const {
     const val POST_ENTRY_SIZE = 3 + 4 + 4
 }
 
+fun Byte.toUint() = this.toInt() and 0xff
+
+fun String.trigram() : Int {
+    val bytes = this.toByteArray()
+    return (bytes[0].toUint() shl 16) or (bytes[1].toUint() shl 8) or bytes[2].toUint()
+}
+
 // An Index implements read-only access to a trigram index.
 class Index(val data: ByteBuffer, offsets : Int) {
     val pathData: Int = data.getInt(offsets)
@@ -97,16 +104,6 @@ class Index(val data: ByteBuffer, offsets : Int) {
     }
 
     fun readInt32(offset : Int) : Int = data.getInt(offset)
-    fun readVarInt(offset : Int) : Int {
-        var res : Int = 0
-        var i = 0
-        do {
-            val b = data.get(offset + i).toInt()
-            res = (res shl 7) or (b and 0x7f)
-            i++
-        } while ((b and 0x80) != 0)
-        return res
-    }
 
     fun readString(offset: Int) : String =
         buildString {
@@ -130,7 +127,7 @@ class Index(val data: ByteBuffer, offsets : Int) {
     }
 
     fun readName(fieldId: Int) : String {
-        var off = nameIndex + 4 * fieldId
+        var off = readInt32(nameIndex + 4 * fieldId)
         return readString(nameData + off)
     }
 
@@ -139,13 +136,16 @@ class Index(val data: ByteBuffer, offsets : Int) {
     }
 
     fun readTrigram(off : Int) : Int =
-            (data[off].toInt() shl 16) or (data[off + 1].toInt() shl 8) or (data[off + 2].toInt())
+            (data[off].toUint() shl 16) or (data[off + 1].toUint() shl 8) or (data[off + 2].toUint())
 
     fun createPostReader(trigram: Int) : PostReader? {
         val ix = getPostIndex(trigram) ?: return null
         val off = postIndex + ix * Const.POST_ENTRY_SIZE
+        val count = readInt32(off + 3)
+        val offset = postData + readInt32(off + 7) + 3
+        // println(String.format("%06x: %d at %d (%x)", readTrigram(off), count, offset, offset))
         if (readTrigram(off) != trigram) return null
-        return PostReader(postData + readInt32(off + 3) + 3, readInt32(off + 7))
+        return PostReader(offset, count)
     }
 
     private fun getPostIndex(trigram: Int): Int? {
@@ -155,21 +155,32 @@ class Index(val data: ByteBuffer, offsets : Int) {
         }
     }
 
-    inner class PostReader(val offset: Int, var count: Int) {
-        var offDeltas = 0
+    inner class PostReader(var offset: Int, var count: Int) {
         var fileId :Int = -1
 
         fun max() = count
 
         fun next() : Boolean {
-            while (count > 0) {
-                count--
-                val delta = readVarInt(offset + offDeltas)
-                fileId += delta
+            count--
+            val delta = readVarInt()
+            if (delta == 0) {
+                fileId = -1
+                return false
             }
-            fileId = -1
-            return false
+            fileId += delta
+            return true
         }
+
+        fun readVarInt() : Int {
+            var res : Int = 0
+            do {
+                val b = data.get(offset).toInt()
+                res = (res shl 7) or (b and 0x7f)
+                offset++
+            } while ((b and 0x80) != 0)
+            return res
+        }
+
     }
 
     fun postingList(trigram: Int): Collection<Int> {
@@ -185,11 +196,6 @@ class Index(val data: ByteBuffer, offsets : Int) {
     }
 
     // postingAnd and postingOr can be replaced with set operations
-
-    fun String.trigram() : Int {
-        val bytes = this.toByteArray()
-        return (bytes[0].toInt() shl 16) or (bytes[1].toInt() shl 8) or bytes[2].toInt()
-    }
 
     fun postingQuery(q : Query) : Collection<Int> {
         val res = mutableSetOf<Int>()
