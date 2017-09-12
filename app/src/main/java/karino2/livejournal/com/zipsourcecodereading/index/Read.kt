@@ -175,10 +175,12 @@ class Index(val data: ByteBuffer, offsets : Int) {
 
         fun readVarInt() : Int {
             var res : Int = 0
+            var s = 0
             do {
                 val b = data.get(offset).toInt()
-                res = (res shl 7) or (b and 0x7f)
+                res = res or ((b and 0x7f) shl s)
                 offset++
+                s+=7
             } while ((b and 0x80) != 0)
             return res
         }
