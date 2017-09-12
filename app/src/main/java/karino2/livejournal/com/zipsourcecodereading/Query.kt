@@ -6,13 +6,12 @@ import com.google.re2j.Regexp
  * Created by _ on 2017/09/04.
  */
 
-
 /*
-This class is port of Query at codesearch/index/regexp.go.
-Query is trigram-ized pattern that contain larger than or equal to original regexp pattern.
+This class is port of Query_ at codesearch/index/regexp.go.
+Query_ is trigram-ized pattern that contain larger than or equal to original regexp pattern.
  */
-class Query(var Op : Query.QueryOp = Query.QueryOp.NONE,
-             var Trigram: MutableSet<String> = mutableSetOf<String>(),
+class Query(var Op : QueryOp = QueryOp.NONE,
+            var Trigram: MutableSet<String> = mutableSetOf<String>(),
             var Sub: ArrayList<Query> = arrayListOf<Query>()) {
     companion object {
         fun fromRegexp(re: Regexp) : Query {
@@ -58,13 +57,6 @@ class Query(var Op : Query.QueryOp = Query.QueryOp.NONE,
             return this.all { it in other }
         }
 
-    }
-
-    enum class QueryOp {
-        ALL, // Everything matches
-        NONE, // Nothing matches
-        AND, // All in Sub and Trigram must match
-        OR  // At least one in Sub or Trigram must match
     }
 
     // andOr returns the query q AND r or q OR r, possibly reusing q's and r's storage.
@@ -189,7 +181,7 @@ class Query(var Op : Query.QueryOp = Query.QueryOp.NONE,
     // implies reports whether q implies r.
     // It is okay for it to return false negatives.
     private fun implies(r: Query): Boolean {
-        if((this.Op == QueryOp.NONE) or (r.Op ==QueryOp.ALL)) {
+        if((this.Op == QueryOp.NONE) or (r.Op == QueryOp.ALL)) {
             // False implies everything.
             // Everything implies True.
             return true

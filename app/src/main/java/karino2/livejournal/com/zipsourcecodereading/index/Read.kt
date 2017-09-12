@@ -1,5 +1,7 @@
 package karino2.livejournal.com.zipsourcecodereading.index
 
+import karino2.livejournal.com.zipsourcecodereading.Query
+import karino2.livejournal.com.zipsourcecodereading.QueryOp
 import java.io.File
 import java.io.FileInputStream
 import java.nio.ByteBuffer
@@ -199,14 +201,14 @@ class Index(val data: ByteBuffer, offsets : Int) {
 
     fun postingQuery(q : Query) : Collection<Int> {
         val res = mutableSetOf<Int>()
-        when (q) {
-            is QNone -> return emptySet()
-            is QAll -> {
+        when (q.Op) {
+            QueryOp.NONE -> return emptySet()
+            QueryOp.ALL -> {
                 res += 0 until numName
             }
-            is QAnd -> {
+            QueryOp.AND -> {
                 var first = true
-                for (s in q.trigrams) {
+                for (s in q.Trigram) {
                     if (first) {
                         res += postingList(s.trigram())
                         first = false
@@ -217,18 +219,18 @@ class Index(val data: ByteBuffer, offsets : Int) {
                         return emptySet()
                     }
                 }
-                for (s in q.sub) {
+                for (s in q.Sub) {
                     res.retainAll(postingQuery(s))
                     if (res.isEmpty()) {
                         return emptySet()
                     }
                 }
             }
-            is QOr -> {
-                for (s in q.trigrams) {
+            QueryOp.OR -> {
+                for (s in q.Trigram) {
                     res += postingList(s.trigram())
                 }
-                for (s in q.sub) {
+                for (s in q.Sub) {
                     res += postingQuery(s)
                 }
             }
