@@ -164,6 +164,11 @@ class SearchActivity : AppCompatActivity() {
                 startActivity(intent)
                 return true
             }
+            R.id.action_filer -> {
+                val intent = Intent(this, ZipFilerActivity::class.java)
+                startActivity(intent)
+                return true
+            }
         }
         return super.onOptionsItemSelected(item)
     }

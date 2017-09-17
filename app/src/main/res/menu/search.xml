@@ -5,4 +5,7 @@
     <item
         android:id="@+id/action_choose"
         android:title="Choose" />
+    <item
+        android:id="@+id/action_filer"
+        android:title="Dirs" />
 </menu>
