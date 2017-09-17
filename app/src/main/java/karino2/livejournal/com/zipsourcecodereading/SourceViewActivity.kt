@@ -32,6 +32,24 @@ class SourceViewActivity : AppCompatActivity() {
         Handler()
     }
 
+
+    fun tryScroll(tv : TextView, lineNum: Int) : Boolean {
+        val sv = findViewById(R.id.scrollView) as ScrollView
+        val layout = tv.layout
+        if(layout == null)
+            return false
+        sv.scrollTo(0, layout.getLineTop(lineNum))
+        return true
+    }
+
+    fun startTryScroll(tv: TextView, lineNum: Int) {
+        if(!tryScroll(tv, lineNum)) {
+            handler.postDelayed({ startTryScroll(tv, lineNum)}, 50)
+        }
+
+    }
+
+
     private fun  openFile(zipEntryName: String, lineNum : Int) {
         val ent = ZipEntry(zipEntryName)
         val reader = BufferedReader(InputStreamReader(sourceArchive.getInputStream(ent)), 8*1024)
@@ -41,8 +59,7 @@ class SourceViewActivity : AppCompatActivity() {
         tv.text = lines.joinToString("\n")
 
         handler.post {
-            val sv = findViewById(R.id.scrollView) as ScrollView
-            sv.scrollTo(0, tv.layout.getLineTop(lineNum))
+            startTryScroll(tv, lineNum)
         }
 
     }
