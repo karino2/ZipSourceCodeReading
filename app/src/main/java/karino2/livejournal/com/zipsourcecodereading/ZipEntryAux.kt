@@ -28,4 +28,7 @@ data class ZipEntryAux(val original : ZipEntry?, val fullPath: String) {
     val _displayName = File(name).name
     val displayName = if(!isDirectory or _displayName.endsWith("/")) _displayName else _displayName + "/"
 
+    val parent : ZipEntryAux
+        get() = ZipEntryAux(File(fullPath).parentFile?.path ?: "")
+
 }

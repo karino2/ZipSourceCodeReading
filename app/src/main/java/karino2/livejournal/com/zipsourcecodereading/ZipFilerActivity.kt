@@ -3,6 +3,7 @@ package karino2.livejournal.com.zipsourcecodereading
 import android.content.Intent
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
+import android.view.MenuItem
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.ListView
@@ -26,6 +27,7 @@ class ZipFilerActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_zip_filer)
 
+        supportActionBar!!.setDisplayHomeAsUpEnabled(true)
 
         listView.onItemClickListener = AdapterView.OnItemClickListener { adapterView, view, i, l ->
             val item = entries[i]
@@ -38,6 +40,28 @@ class ZipFilerActivity : AppCompatActivity() {
         }
 
         showContent(currentFolder)
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        when(item.itemId) {
+            android.R.id.home -> {
+                upOrFinish()
+                return true
+            }
+        }
+        return super.onOptionsItemSelected(item)
+    }
+
+    private fun upOrFinish() {
+        if(currentFolder?.isRoot ?: true) {
+            finish()
+            return
+        }
+        showContent(currentFolder!!.parent)
+    }
+
+    override fun onBackPressed() {
+        upOrFinish()
     }
 
     private fun openFile(item: ZipEntry) {
