@@ -31,10 +31,11 @@ fun DataOutput.writeVarint(n: Int) {
 
 class IndexException(message: String) : RuntimeException(message)
 
-class IndexWriter(val tmpDir : File, outputFile: File) {
-    val POST_MAX = (64 shl 20) / 8 // 64MiB worth of posts entries
-
-    val trigrams = mutableSetOf<Int>()
+class IndexWriter(
+        val tmpDir : File,
+        outputFile: File,
+        val postMax : Int = (64 shl 20) / 8 // 64MiB worth of posts entries
+) {
     val paths = mutableListOf<String>()
 
     val nameDataFile = createTempFile("nameData")
@@ -64,8 +65,7 @@ class IndexWriter(val tmpDir : File, outputFile: File) {
     }
 
     fun add(name: String, inputStream: DataInput) {
-
-        trigrams.clear()
+        val trigrams = mutableSetOf<Int>()
         var tv = 0
         var fileLen = 0L
         var lineLen = 0
@@ -106,7 +106,7 @@ class IndexWriter(val tmpDir : File, outputFile: File) {
             // TODO: Log
 
         for (t in trigrams) {
-            if (posts.size > POST_MAX) {
+            if (posts.size >= postMax) {
                 flushPost()
             }
             posts += PostEntry(t, fileId)
@@ -169,10 +169,10 @@ class IndexWriter(val tmpDir : File, outputFile: File) {
     }
 
     private fun flushPost() {
-        val tempIndexFile = File.createTempFile("postindex-", ".idx", tmpDir)
+        val tempIndexFile = File.createTempFile("postEntry-", ".idx", tmpDir)
         posts.sortBy { it.trigram }
-        tempIndexFile.outputStream().use {
-            val out = DataOutputStream(BufferedOutputStream(it))
+        DataOutputStream(BufferedOutputStream(tempIndexFile.outputStream())).use {
+            out ->
             for (post in posts) {
                 out.writeInt(post.trigram)
                 out.writeInt(post.fileId)
@@ -229,15 +229,30 @@ class IndexWriter(val tmpDir : File, outputFile: File) {
     }
 }
 
-private class FiledPostEntries(val file: File) : Iterator<PostEntry> {
-    val stream: DataInputStream = DataInputStream(BufferedInputStream(FileInputStream(file)))
+class FiledPostEntries(val stream: DataInputStream) : Iterator<PostEntry> {
+    var next : PostEntry? = prepareNext()
 
-    override fun hasNext(): Boolean = stream.available() >= 8
+    constructor(file: File) :
+            this(DataInputStream(BufferedInputStream(FileInputStream(file)))) {
+    }
+
+    override fun hasNext(): Boolean = next != null
 
     override fun next(): PostEntry {
-        val trigram = stream.readInt()
-        val fileId = stream.readInt()
-        return PostEntry(trigram = trigram, fileId = fileId)
+        val ret = next!!
+        prepareNext()
+        return ret
+    }
+
+    private fun prepareNext(): PostEntry? {
+        try {
+            val trigram = stream.readInt()
+            val fileId = stream.readInt()
+            next = PostEntry(trigram = trigram, fileId = fileId)
+        } catch (e: EOFException) {
+            next = null
+        }
+        return next
     }
 }
 
