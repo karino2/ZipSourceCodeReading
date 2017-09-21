@@ -79,7 +79,9 @@ class IndexWriter(
                 if (fileLen >= 3) {
                     trigrams.add(tv)
                 }
-                // TODO: check invalid utf8
+                if (!validUtf8((tv shr 8) and 0xff, tv and 0xff)) {
+                    throw IndexException(String.format("%s: invalid UTF-8, ignoring", name))
+                }
 
                 if (fileLen > Const.MAX_FILE_LEN) {
                     throw IndexException(String.format("%s: too long, ignoring", name))
@@ -278,3 +280,18 @@ class PostHeap : Iterator<PostEntry> {
 
     override fun hasNext() : Boolean = !chunks.isEmpty()
 }
+
+fun validUtf8(c1: Int, c2: Int) : Boolean =
+        when (c1) {
+            in 0 until 0x80 ->
+                // 1-byte, must be followed by 1-byte or first of multi-byte
+                c2 < 0x80 || c2 in 0xc0 until 0xf8
+            in 0x80 until 0xc0 ->
+                // continuation byte, can be followed by nearly anything
+                c2 < 0xf8
+            in 0xc0 until 0xf8 ->
+                // first of multi-byte, must be followed by continuation byte
+                c2 in 0x80 until 0xc0
+            else ->
+                false
+        }
