@@ -72,6 +72,10 @@ object Const {
     const val TRAILER_MAGIC = "\ncsearch trailr\n"
 
     const val POST_ENTRY_SIZE = 3 + 4 + 4
+
+    const val MAX_FILE_LEN = 1 shl 30
+    const val MAX_LINE_LEN = 2000
+    const val MAX_TEXT_TRIGRAMS = 20000
 }
 
 fun Byte.toUint() = this.toInt() and 0xff
