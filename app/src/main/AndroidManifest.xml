@@ -25,6 +25,7 @@
         <activity android:name=".ZipChooseActivity" />
         <activity android:name=".SourceViewActivity" />
         <activity android:name=".ZipFilerActivity"></activity>
+        <service android:name=".IndexingService" />
     </application>
 
 </manifest>

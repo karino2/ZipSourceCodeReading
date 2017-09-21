@@ -11,10 +11,16 @@ import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
 import android.widget.TextView
+import com.google.re2j.Parser
 import com.google.re2j.Pattern
+import com.google.re2j.RE2
+import io.reactivex.Observable
+import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.Disposable
 import io.reactivex.schedulers.Schedulers
+import karino2.livejournal.com.zipsourcecodereading.index.Index
+import java.io.File
 import java.util.concurrent.TimeUnit
 import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
@@ -23,6 +29,10 @@ class SearchActivity : AppCompatActivity() {
 
     val sourceArchive : SourceArchive by lazy {
         SourceArchive(ZipFile(MainActivity.lastZipPath(this)))
+    }
+
+    val index : Index by lazy {
+        Index.open(ZipChooseActivity.findIndex(File(MainActivity.lastZipPath(this)))!!)
     }
 
     class ViewHolder(val view: View) : RecyclerView.ViewHolder(view) {
@@ -88,9 +98,13 @@ class SearchActivity : AppCompatActivity() {
 
         val reader = RegexpReader(Pattern.compile(spat))
 
-        val obs = sourceArchive.listFiles()
-                .filter{  ffilter(it.name) }
-                .flatMap{ reader.Read(sourceArchive.getInputStream(it), it.toString(), 0) }
+        // we should get regexp from pattern, but
+        val query = Query.fromRegexp(Parser.parse(spat, RE2.PERL))
+
+        val obs = Observable.defer{ Observable.fromIterable(index.postingQuery(query)) }
+                .map{ index.readName(it) }
+                .filter{  ffilter(it) }
+                .flatMap{ reader.Read(sourceArchive.getInputStream(ZipEntry(it)), it, 0) }
                 .subscribeOn(Schedulers.io())
                 .buffer(1, TimeUnit.SECONDS, 5)
 
