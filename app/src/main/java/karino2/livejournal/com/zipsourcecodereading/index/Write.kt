@@ -7,7 +7,7 @@ data class PostEntry(val trigram : Int, val fileId: Int) : Comparable<PostEntry>
             if (other.trigram != trigram)
                 trigram.compareTo(other.trigram)
             else
-                fileId.compareTo(fileId)
+                fileId.compareTo(other.fileId)
 }
 
 fun DataOutput.writeUtf8(s : String) {
