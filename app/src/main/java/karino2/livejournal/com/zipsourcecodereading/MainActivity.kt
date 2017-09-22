@@ -5,6 +5,7 @@ import android.content.Intent
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.widget.Toast
+import java.io.File
 
 class MainActivity : AppCompatActivity() {
     companion object {
@@ -25,11 +26,14 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
 
         val zipPath = lastZipPath(this)
-        if(null != zipPath) {
-            val intent = Intent(this, SearchActivity::class.java)
-            startActivity(intent)
-            finish()
-            return
+        zipPath?.let {
+            val idx = ZipChooseActivity.findIndex(File(zipPath))
+            idx?.let {
+                val intent = Intent(this, SearchActivity::class.java)
+                startActivity(intent)
+                finish()
+                return
+            }
         }
 
         val intent = Intent(this, ZipChooseActivity::class.java)
