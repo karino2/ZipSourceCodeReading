@@ -7,6 +7,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Handler
 import android.support.v7.app.NotificationCompat
+import karino2.livejournal.com.zipsourcecodereading.index.IndexException
 import karino2.livejournal.com.zipsourcecodereading.index.IndexWriter
 import java.io.DataInputStream
 import java.io.File
@@ -37,7 +38,7 @@ class IndexingService : IntentService("IndexingService") {
             zipArchive.listFiles()
                     .filter{ !File(it.name).name.startsWith(".") }
                     .doOnNext { handler.post { updateNotification(count++) }}
-                    .map { indexWriter.add(it.toString(), DataInputStream(zipArchive.getInputStream(it))) }
+                    .map { try { indexWriter.add(it.toString(), DataInputStream(zipArchive.getInputStream(it))); 1 } catch(e: IndexException) { 0 } }
                     .subscribe()
             showMessageNotification("start flush")
             indexWriter.flush()
