@@ -147,6 +147,11 @@ class SearchActivity : AppCompatActivity() {
                 startSearch()
                 return true;
             }
+            // for hardware keyboard.
+            if(actionId == EditorInfo.IME_ACTION_UNSPECIFIED) {
+                startSearch();
+                return true;
+            }
             return false;
         })
 
