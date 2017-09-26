@@ -27,7 +27,7 @@ class SourceArchive(val zipFile : ZipFile) {
     }
 
     fun ZipEntry.isUnder(dir: ZipEntryAux) : Boolean {
-        return this.name.startsWith(dir.name)
+        return this.name.startsWith(dir.name) and (this.name.length != dir.nameWithSlash.length)
     }
 
     fun ZipEntry.isDirectlyUnder(dir: ZipEntryAux): Boolean {
