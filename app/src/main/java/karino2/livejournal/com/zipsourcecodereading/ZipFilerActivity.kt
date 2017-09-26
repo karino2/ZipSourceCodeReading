@@ -27,7 +27,9 @@ class ZipFilerActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_zip_filer)
 
-        supportActionBar!!.setDisplayHomeAsUpEnabled(true)
+        supportActionBar?.let {
+            it.setDisplayHomeAsUpEnabled(true)
+        }
 
         listView.onItemClickListener = AdapterView.OnItemClickListener { adapterView, view, i, l ->
             val item = entries[i]
@@ -78,5 +80,7 @@ class ZipFilerActivity : AppCompatActivity() {
         entries = zipArchive.listFilesAt(currentFolder)
         val adapter = ArrayAdapter<String>(this, R.layout.list_item, entries.map { it.displayName })
         listView.adapter = adapter
+
+        supportActionBar!!.title = currentFolder?.name ?: "/"
     }
 }

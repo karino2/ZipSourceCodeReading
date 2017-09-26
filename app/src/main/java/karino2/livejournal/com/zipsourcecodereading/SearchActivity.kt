@@ -129,6 +129,8 @@ class SearchActivity : AppCompatActivity() {
         val toolbar = (findViewById(R.id.toolbar) as Toolbar)
         setSupportActionBar(toolbar)
 
+        supportActionBar!!.title = sourceArchive.title
+
         assert(MainActivity.lastZipPath(this) != null)
 
         val recycle = (findViewById(R.id.searchResult) as RecyclerView)

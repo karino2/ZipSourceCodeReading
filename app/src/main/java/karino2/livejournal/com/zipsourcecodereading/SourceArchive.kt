@@ -101,4 +101,7 @@ class SourceArchive(val zipFile : ZipFile) {
         return zipFile.getInputStream(ent)
     }
 
+    val title: String
+        get() = zipFile.name
+
 }

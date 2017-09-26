@@ -52,6 +52,8 @@ class SourceViewActivity : AppCompatActivity() {
 
     private fun  openFile(zipEntryName: String, lineNum : Int) {
         val ent = ZipEntry(zipEntryName)
+        supportActionBar!!.title = ent.name
+
         val reader = BufferedReader(InputStreamReader(sourceArchive.getInputStream(ent)), 8*1024)
 
         val lines = reader.readLines()
