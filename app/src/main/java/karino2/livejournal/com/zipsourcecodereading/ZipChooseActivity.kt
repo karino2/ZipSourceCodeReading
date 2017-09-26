@@ -1,12 +1,18 @@
 package karino2.livejournal.com.zipsourcecodereading
 
 import android.content.Intent
+import android.net.Uri
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Environment
+import android.provider.DocumentsContract
+import android.provider.MediaStore
+import android.provider.OpenableColumns
 import android.widget.EditText
 import java.io.File
 import java.io.IOException
+import java.util.zip.ZipFile
+import java.util.zip.ZipInputStream
 
 
 class ZipChooseActivity : AppCompatActivity() {
@@ -82,6 +88,9 @@ class ZipChooseActivity : AppCompatActivity() {
 
     private fun onZipPathChosen(path: String) {
         MainActivity.writeLastZipPath(this, path)
+
+        // val zipIS = ZipInputStream(contentResolver.openInputStream(Uri.parse(path)))
+
         val zipFile = File(path)
         val indexFile = findIndex(zipFile)
         indexFile?.let {
@@ -106,12 +115,44 @@ class ZipChooseActivity : AppCompatActivity() {
 
     fun showMessage(msg : String) = MainActivity.showMessage(this, msg)
 
+    fun externalStorageDir(storageType : String) : File {
+        val primary = Environment.getExternalStorageDirectory()
+        if(storageType == "primary") {
+            return primary
+        }
+        val extdirs = getExternalFilesDirs(null)
+        val suffix = extdirs[0].absolutePath.substring(primary.absolutePath.length)
+        for(file in getExternalFilesDirs(null)) {
+            val abspath = file.absolutePath
+            val dirstr = abspath.substring(0 until (abspath.length - suffix.length))
+            val dir = File(dirstr)
+            if(dir.name.equals(storageType))
+                return dir;
+
+        }
+
+        throw IllegalArgumentException("No storage found.")
+
+    }
+
+    fun Uri.toPath() : String {
+        // val sel = "${MediaStore.Files.FileColumns._ID}=?"
+
+        if("com.android.externalstorage.documents".equals(this.authority)) {
+            val docId = DocumentsContract.getDocumentId(this)
+            val split = docId.split(":")
+
+            return externalStorageDir(split[0]).absolutePath + "/${split[1]}"
+        }
+        return this.path
+
+    }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         when(requestCode) {
             REQUEST_PICK_ZIP ->{
                 if(resultCode == RESULT_OK) {
-                    data?.getData()?.getPath()?.let { zipPathField.setText(it) }
+                    data?.getData()?.let { zipPathField.setText(it.toPath()) }
                 }
                 return
             }
