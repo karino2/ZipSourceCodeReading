@@ -21,11 +21,18 @@ class MainActivity : AppCompatActivity() {
 
     }
 
+    fun requestedZipPath() : String? {
+        getIntent()?.data?.path?.let {
+            writeLastZipPath(this, it)
+            return it
+        }
+        return lastZipPath(this)
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val zipPath = lastZipPath(this)
+        val zipPath = requestedZipPath()
         zipPath?.let {
             val idx = ZipChooseActivity.findIndex(File(zipPath))
             idx?.let {
