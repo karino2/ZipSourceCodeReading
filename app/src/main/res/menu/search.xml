@@ -4,8 +4,12 @@
 
     <item
         android:id="@+id/action_choose"
+        android:icon="@drawable/choose"
+        app:showAsAction="ifRoom"
         android:title="Choose" />
     <item
         android:id="@+id/action_filer"
+        android:icon="@drawable/filer"
+        app:showAsAction="ifRoom"
         android:title="Dirs" />
 </menu>
