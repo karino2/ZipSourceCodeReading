@@ -7,4 +7,9 @@
         android:icon="@android:drawable/ic_menu_search"
         app:showAsAction="always"
         android:title="Search" />
+    <item
+        android:id="@+id/search_global"
+        android:icon="@drawable/gsearch"
+        app:showAsAction="ifRoom"
+        android:title="GSearch" />
 </menu>

@@ -1,5 +1,6 @@
 package karino2.livejournal.com.zipsourcecodereading
 
+import android.content.Intent
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Handler
@@ -158,6 +159,11 @@ class SourceViewActivity : AppCompatActivity() {
         when(item.itemId) {
             R.id.search_this -> {
                 showSearchBar()
+                return true
+            }
+            R.id.search_global -> {
+                val intent = Intent(this, SearchActivity::class.java)
+                startActivity(intent)
                 return true
             }
 
