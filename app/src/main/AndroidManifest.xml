@@ -29,7 +29,9 @@
             android:name=".SearchActivity"
             android:theme="@style/Theme.AppCompat.Light.NoActionBar" />
         <activity android:name=".ZipChooseActivity" />
-        <activity android:name=".SourceViewActivity" />
+        <activity android:name=".SourceViewActivity"
+            android:windowSoftInputMode="stateHidden|adjustNothing"
+            />
         <activity android:name=".ZipFilerActivity"></activity>
         <service android:name=".IndexingService" />
     </application>

@@ -33,6 +33,8 @@
         android:layout_height="wrap_content"
         android:layout_alignParentLeft="true"
         android:layout_margin="1dip"
+        android:imeOptions="actionSearch"
+        android:inputType="textFilter"
         android:layout_toLeftOf="@id/previous"
         />
 

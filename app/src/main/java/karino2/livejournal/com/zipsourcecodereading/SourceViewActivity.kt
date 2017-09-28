@@ -14,12 +14,9 @@ import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
 import android.widget.ImageButton
 import android.widget.EditText
-import android.os.Build
 import android.text.Spannable
 import android.text.Selection
-import android.text.Selection.getSelectionEnd
-
-
+import android.view.inputmethod.EditorInfo
 
 
 class SourceViewActivity : AppCompatActivity() {
@@ -51,15 +48,18 @@ class SourceViewActivity : AppCompatActivity() {
 
     val searchField : EditText by lazy {
         val sf = searchBar.findViewById(R.id.edittext) as EditText
-        sf.setOnKeyListener {
-            v, key, ev ->
-            if(key == KeyEvent.KEYCODE_ENTER) {
+        sf.setOnEditorActionListener(fun(view, actionId, keyEvent)  : Boolean {
+            if(actionId == EditorInfo.IME_ACTION_SEARCH) {
                 searchNext()
-                true
-            }else {
-                false
+                return true;
             }
-        }
+            // for hardware keyboard.
+            if(actionId == EditorInfo.IME_ACTION_UNSPECIFIED) {
+                searchNext();
+                return true;
+            }
+        return false;
+        })
         sf
     }
 
@@ -85,28 +85,28 @@ class SourceViewActivity : AppCompatActivity() {
     }
 
     private fun searchPrevious() {
-        val text = textView.getText().toString()
+        val text = sourceTextView.getText().toString()
         val search = searchField.text.toString()
         if (search.length == 0) {
             return
         }
-        val selection = textView.getSelectionStart() - 1
+        val selection = sourceTextView.getSelectionStart() - 1
         var previous = text.lastIndexOf(search, selection)
         if (previous > -1) {
-            Selection.setSelection(textView.getText() as Spannable,
+            Selection.setSelection(sourceTextView.getText() as Spannable,
                     previous,
                     previous + search.length)
-            if (!textView.isFocused()) {
-                textView.requestFocus()
+            if (!sourceTextView.isFocused()) {
+                sourceTextView.requestFocus()
             }
         } else { // wrap
             previous = text.lastIndexOf(search)
             if (previous > -1) {
-                Selection.setSelection(textView.getText() as Spannable,
+                Selection.setSelection(sourceTextView.getText() as Spannable,
                         previous,
                         previous + search.length)
-                if (!textView.isFocused()) {
-                    textView.requestFocus()
+                if (!sourceTextView.isFocused()) {
+                    sourceTextView.requestFocus()
                 }
             }
         }
@@ -114,28 +114,28 @@ class SourceViewActivity : AppCompatActivity() {
 
 
     private fun searchNext() {
-        val text = textView.getText().toString()
+        val text = sourceTextView.getText().toString()
         val search = searchField.text.toString()
         if (search.length == 0) {
             return
         }
-        val selection = textView.getSelectionEnd()
+        val selection = sourceTextView.getSelectionEnd()
         var next = text.indexOf(search, selection)
         if (next > -1) {
-            Selection.setSelection(textView.getText() as Spannable,
+            Selection.setSelection(sourceTextView.getText() as Spannable,
                     next,
                     next + search.length)
-            if (!textView.isFocused()) {
-                textView.requestFocus()
+            if (!sourceTextView.isFocused()) {
+                sourceTextView.requestFocus()
             }
         } else { // wrap
             next = text.indexOf(search)
             if (next > -1) {
-                Selection.setSelection(textView.getText() as Spannable,
+                Selection.setSelection(sourceTextView.getText() as Spannable,
                         next,
                         next + search.length)
-                if (!textView.isFocused()) {
-                    textView.requestFocus()
+                if (!sourceTextView.isFocused()) {
+                    sourceTextView.requestFocus()
                 }
             }
         }
@@ -145,7 +145,9 @@ class SourceViewActivity : AppCompatActivity() {
     val tempCoords = IntArray(2)
     fun showSearchBar() {
         scrollView.getLocationInWindow(tempCoords);
-        searchWindow.showAtLocation(scrollView, Gravity.NO_GRAVITY, 0, tempCoords[1]);
+        searchWindow.showAtLocation(scrollView, Gravity.TOP or Gravity.RIGHT, 0, tempCoords[1]);
+        searchField.requestFocus()
+
     }
 
     fun hideSearchBar() {
@@ -164,11 +166,35 @@ class SourceViewActivity : AppCompatActivity() {
     }
 
 
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+
+        if(event.action ==  KeyEvent.ACTION_DOWN ) {
+                if(event.isCtrlPressed) {
+                    when (event.keyCode) {
+                        KeyEvent.KEYCODE_F -> {
+                            showSearchBar()
+                            return true
+                        }
+                    }
+                }
+        }
+        return super.dispatchKeyEvent(event)
+    }
+
+
     var firstTime = true
 
 
     private val scrollView: ScrollView by lazy {
         findViewById(R.id.scrollView) as ScrollView
+    }
+
+    private fun scrollPageUp() {
+        scrollView.smoothScrollBy(0, -(2*scrollView.height)/3)
+    }
+
+    private fun scrollPageDown() {
+        scrollView.smoothScrollBy(0, (2*scrollView.height)/3)
     }
 
     fun tryScroll(tv : TextView, lineNum: Int) : Boolean {
@@ -203,8 +229,28 @@ class SourceViewActivity : AppCompatActivity() {
     }
 
 
-    private val textView: TextView by lazy {
-        (findViewById(R.id.sourceTextView) as TextView)
+    private val sourceTextView: TextView by lazy {
+        val sv = (findViewById(R.id.sourceTextView) as TextView)
+        sv.setOnKeyListener { view, keyCode, keyEvent ->
+            if(keyEvent.action == KeyEvent.ACTION_DOWN) {
+
+                when (keyCode) {
+                    KeyEvent.KEYCODE_F, KeyEvent.KEYCODE_SPACE -> {
+                        scrollPageDown()
+                        true
+                    }
+                    KeyEvent.KEYCODE_B ->{
+                        scrollPageUp()
+                        true
+                    }
+                    else ->false
+                }
+
+            } else {
+                false
+            }
+        }
+        sv
     }
 
     private fun  openFile(zipEntryName: String, lineNum : Int) {
@@ -214,7 +260,7 @@ class SourceViewActivity : AppCompatActivity() {
         val reader = BufferedReader(InputStreamReader(sourceArchive.getInputStream(ent)), 8*1024)
 
         val lines = reader.readLines()
-        val tv = textView
+        val tv = sourceTextView
         tv.text = lines.joinToString("\n")
 
         handler.post {
