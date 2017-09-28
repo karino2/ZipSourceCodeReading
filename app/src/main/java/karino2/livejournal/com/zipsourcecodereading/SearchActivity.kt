@@ -4,6 +4,8 @@ import android.content.Context
 import android.content.Intent
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
+import android.support.v7.widget.DividerItemDecoration
+import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
 import android.support.v7.widget.Toolbar
 import android.view.*
@@ -141,6 +143,9 @@ class SearchActivity : AppCompatActivity() {
                     // ada.notifyItemRangeInserted(0, ada.items.size)
                     ada.notifyDataSetChanged()
                 }
+
+        val divider = DividerItemDecoration(this, (recycle.layoutManager as LinearLayoutManager).orientation)
+        recycle.addItemDecoration(divider)
 
 
         (findViewById(R.id.searchEntryField) as EditText).setOnEditorActionListener(fun(view, actionId, keyEvent)  : Boolean {
