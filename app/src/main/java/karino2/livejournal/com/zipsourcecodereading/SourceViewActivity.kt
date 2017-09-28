@@ -3,6 +3,9 @@ package karino2.livejournal.com.zipsourcecodereading
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Handler
+import android.text.Layout
+import android.view.View
+import android.view.ViewTreeObserver
 import android.widget.ScrollView
 import android.widget.TextView
 import java.io.BufferedReader
@@ -33,13 +36,32 @@ class SourceViewActivity : AppCompatActivity() {
     }
 
 
+    var firstTime = true
+
+
+
     fun tryScroll(tv : TextView, lineNum: Int) : Boolean {
         val sv = findViewById(R.id.scrollView) as ScrollView
         val layout = tv.layout
         if(layout == null)
             return false
-        sv.scrollTo(0, layout.getLineTop(lineNum))
+        if(firstTime) {
+            firstTime = false
+            var onlayout : View.OnLayoutChangeListener = View.OnLayoutChangeListener{_, _, _, _, _, _, _, _, _ ->}
+            onlayout = View.OnLayoutChangeListener {_, _, _, _, _, _, _, _, _ ->
+                scrollToLine(sv, layout, lineNum)
+                sv.removeOnLayoutChangeListener(onlayout)
+            }
+            sv.addOnLayoutChangeListener(onlayout)
+            return true
+        }
+        scrollToLine(sv, layout, lineNum)
         return true
+    }
+
+    private fun scrollToLine(sv: ScrollView, layout: Layout, lineNum: Int) {
+        val pos = layout.getLineTop(lineNum)
+        sv.smoothScrollTo(0, layout.getLineTop(lineNum))
     }
 
     fun startTryScroll(tv: TextView, lineNum: Int) {

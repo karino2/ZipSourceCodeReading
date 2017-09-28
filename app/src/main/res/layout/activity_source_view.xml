@@ -21,8 +21,9 @@
             android:layout_height="match_parent"
             android:clickable="false"
             android:padding="5dp"
+            android:text="TextView"
             android:textIsSelectable="true"
-            android:text="TextView" />
+            android:typeface="monospace" />
 
     </ScrollView>
 </android.support.constraint.ConstraintLayout>
