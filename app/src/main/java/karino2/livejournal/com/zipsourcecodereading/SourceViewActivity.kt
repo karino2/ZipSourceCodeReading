@@ -6,18 +6,14 @@ import android.os.Bundle
 import android.os.Handler
 import android.text.Layout
 import android.view.*
-import android.widget.PopupWindow
-import android.widget.ScrollView
-import android.widget.TextView
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
-import android.widget.ImageButton
-import android.widget.EditText
 import android.text.Spannable
 import android.text.Selection
 import android.view.inputmethod.EditorInfo
+import android.widget.*
 
 
 class SourceViewActivity : AppCompatActivity() {
@@ -64,25 +60,21 @@ class SourceViewActivity : AppCompatActivity() {
         sf
     }
 
-
     val searchBar : View by lazy {
-        layoutInflater.inflate(R.layout.search_bar, null)
+        val rl = findViewById(R.id.search) as RelativeLayout
+        setupSearchBar(rl)
+        rl
     }
 
-    val searchWindow: PopupWindow by lazy {
-
-        val searchWindow = PopupWindow(searchBar, ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
-        searchWindow.setFocusable(true)
 
 
-
+    private fun setupSearchBar(searchBar : View) {
         val cancelButton = searchBar.findViewById(R.id.cancel) as ImageButton
         cancelButton.setOnClickListener { hideSearchBar() }
         val prevButton = searchBar.findViewById(R.id.previous) as ImageButton
-        prevButton.setOnClickListener{ searchPrevious() }
+        prevButton.setOnClickListener { searchPrevious() }
         val nextButton = searchBar.findViewById(R.id.next) as ImageButton
-        nextButton.setOnClickListener{ searchNext() }
-        searchWindow
+        nextButton.setOnClickListener { searchNext() }
     }
 
     private fun searchPrevious() {
@@ -143,16 +135,14 @@ class SourceViewActivity : AppCompatActivity() {
 
     }
 
-    val tempCoords = IntArray(2)
     fun showSearchBar() {
-        scrollView.getLocationInWindow(tempCoords);
-        searchWindow.showAtLocation(scrollView, Gravity.TOP or Gravity.RIGHT, 0, tempCoords[1]);
+        searchBar.visibility = View.VISIBLE
         searchField.requestFocus()
 
     }
 
     fun hideSearchBar() {
-        searchWindow.dismiss()
+        searchBar.visibility = View.GONE
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
