@@ -328,10 +328,10 @@ class SourceViewActivity : AppCompatActivity() {
                                 it.map { oneResult ->
                                     val color = when (oneResult.styleKeys.get(0)) {
                                         "typ" -> 0xff763405
-                                        "kwd" -> 0xffff00ff
+                                        "kwd" -> 0xff000088
                                         "lit" -> 0xff0000ff
                                         "com" -> 0xff666666
-                                        "str" -> 0xff00bcff
+                                        "str" -> 0xffbb0000
                                         "pun" -> 0xff111111
                                         else -> 0xff000000
                                     }
