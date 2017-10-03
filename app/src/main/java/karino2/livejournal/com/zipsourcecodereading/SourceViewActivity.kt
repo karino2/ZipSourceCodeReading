@@ -4,16 +4,25 @@ import android.content.Intent
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Handler
-import android.text.Layout
+import android.text.*
 import android.view.*
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
-import android.text.Spannable
-import android.text.Selection
+import android.text.style.ForegroundColorSpan
 import android.view.inputmethod.EditorInfo
 import android.widget.*
+import io.reactivex.Completable
+import io.reactivex.Observable
+import io.reactivex.Single
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.Disposable
+import io.reactivex.functions.BiFunction
+import io.reactivex.schedulers.Schedulers
+import syntaxhighlight.ParseResult
+import java.io.File
+import java.util.concurrent.TimeUnit
 
 
 class SourceViewActivity : AppCompatActivity() {
@@ -198,6 +207,9 @@ class SourceViewActivity : AppCompatActivity() {
         val layout = tv.layout
         if(layout == null)
             return false
+
+        // now layout is done before setText is called. So never catch up to the timing of OnLayoutChangeListener anymore (I guess).
+        /*
         if(firstTime) {
             firstTime = false
             var onlayout : View.OnLayoutChangeListener = View.OnLayoutChangeListener{_, _, _, _, _, _, _, _, _ ->}
@@ -208,6 +220,7 @@ class SourceViewActivity : AppCompatActivity() {
             sv.addOnLayoutChangeListener(onlayout)
             return true
         }
+        */
         scrollToLine(sv, layout, lineNum)
         return true
     }
@@ -249,19 +262,82 @@ class SourceViewActivity : AppCompatActivity() {
         sv
     }
 
+    val parser = RxPrettifyParser()
+
+    var parsing : Disposable = object: Disposable{
+        override fun dispose() {
+        }
+
+        override fun isDisposed(): Boolean {
+            return true
+        }
+    }
+
+    fun showMessage(msg: String) = MainActivity.showMessage(this, msg)
+
+    override fun onStop() {
+        // this might cause partial code as non-coloring. But it's rare and also not fatal.
+        parsing.dispose()
+
+        super.onStop()
+    }
+
     private fun  openFile(zipEntryName: String, lineNum : Int) {
         val ent = ZipEntry(zipEntryName)
         supportActionBar!!.title = ent.name
 
-        val reader = BufferedReader(InputStreamReader(sourceArchive.getInputStream(ent)), 8*1024)
+        parsing.dispose()
+        Single.fromCallable {
+            val reader = BufferedReader(InputStreamReader(sourceArchive.getInputStream(ent)), 8*1024)
+            val lines = reader.readLines()
+            lines.joinToString("\n")
+        }.subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe { content ->
+                    val tv = sourceTextView
 
-        val lines = reader.readLines()
-        val tv = sourceTextView
-        tv.text = lines.joinToString("\n")
+                    val tooLarge = content.count() > 100*1024
 
-        handler.post {
-            startTryScroll(tv, lineNum)
-        }
+                    tv.setText(content, TextView.BufferType.SPANNABLE)
 
+                    if(!tooLarge) {
+                        startColoring(zipEntryName, content)
+                    } else {
+                        handler.postDelayed({ showMessage("Too large file. Turn off coloring.") }, 1500)
+                    }
+
+                    handler.post {
+                        startTryScroll(tv, lineNum)
+                    }
+                }
+    }
+
+    private fun startColoring(zipEntryName: String, content: String) {
+        Observable.timer(500, TimeUnit.MILLISECONDS)
+                .subscribeOn(Schedulers.io())
+                .subscribe {
+                    parsing = Observable.zip(
+                            parser.parse(File(zipEntryName).extension, content)
+                                    .buffer(2000),
+                            Observable.interval(1000, TimeUnit.MILLISECONDS),
+                            BiFunction { obs: List<ParseResult>, time: Long->obs}
+                    )
+                            .subscribeOn(Schedulers.io())
+                            .observeOn(AndroidSchedulers.mainThread())
+                            .subscribe {
+                                it.map { oneResult ->
+                                    val color = when (oneResult.styleKeys.get(0)) {
+                                        "typ" -> 0xff763405
+                                        "kwd" -> 0xffff00ff
+                                        "lit" -> 0xff0000ff
+                                        "com" -> 0xff666666
+                                        "str" -> 0xff00bcff
+                                        "pun" -> 0xff111111
+                                        else -> 0xff000000
+                                    }
+                                    (sourceTextView.text as Spannable).setSpan(ForegroundColorSpan(color.toInt()), oneResult.offset, oneResult.offset + oneResult.length, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+                                }
+                            }
+                }
     }
 }
