@@ -29,7 +29,7 @@
             android:layout_height="match_parent"
             android:clickable="false"
             android:padding="5dp"
-            android:text="TextView"
+            android:text="Loading..."
             android:textIsSelectable="true"
             android:typeface="monospace" />
 
