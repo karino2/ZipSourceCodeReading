@@ -8,16 +8,9 @@ import android.graphics.Typeface
 import android.text.SpannableString
 import android.text.TextPaint
 import android.util.AttributeSet
+import android.util.TypedValue
 import android.view.View
 import android.view.ViewTreeObserver
-import android.view.Gravity
-import android.util.FloatMath
-import android.opengl.ETC1.getHeight
-import android.opengl.ETC1.getHeight
-import android.opengl.ETC1.getWidth
-import android.text.BoringLayout
-import android.text.method.Touch
-import android.text.method.ArrowKeyMovementMethod
 
 
 
@@ -30,7 +23,7 @@ import android.text.method.ArrowKeyMovementMethod
  */
 class LongTextView(context: Context, attrs: AttributeSet) : View(context, attrs), ViewTreeObserver.OnPreDrawListener{
 
-    var text = SpannableString("")
+    var text = SpannableString("Loading...")
     set(newText) {
         textPaint.textScaleX = 1F
 
@@ -63,7 +56,14 @@ class LongTextView(context: Context, attrs: AttributeSet) : View(context, attrs)
         makeNewLayout(width, false)
     }
 
-    val textPaint = TextPaint(Paint.ANTI_ALIAS_FLAG)
+    val textPaint  by lazy {
+        val tp = TextPaint(Paint.ANTI_ALIAS_FLAG)
+        tp.typeface = Typeface.MONOSPACE
+        tp.textSize = resolveSp(18F)
+        tp
+    }
+
+    fun resolveSp(sp : Float) =  TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, sp, context.resources.displayMetrics)
 
     private fun makeNewLayout(width: Int,  bringIntoView: Boolean) {
         mHighlightPathBogus = true
@@ -77,7 +77,7 @@ class LongTextView(context: Context, attrs: AttributeSet) : View(context, attrs)
         val spacingAdd = 0F
         val includePad = true
 
-        layout = Layout(text, textPaint, w, spacingMulti, spacingAdd,  includePad)
+        layout = Layout.create(text, textPaint, w, spacingMulti, spacingAdd,  includePad)
 
         setupIdeographicalSpacePath()
         setupLineBreakPath()
@@ -215,7 +215,7 @@ class LongTextView(context: Context, attrs: AttributeSet) : View(context, attrs)
         }
 
         if (showLineNumber) {
-            lineNumberWidth = lineNumberPaint.measureText("888888|") as Int
+            lineNumberWidth = lineNumberPaint.measureText("888888|").toInt()
         } else {
             lineNumberWidth = 0
         }
@@ -305,10 +305,10 @@ class LongTextView(context: Context, attrs: AttributeSet) : View(context, attrs)
     var lineNumberWidth = 0
 
     val lineNumberPaint : Paint by lazy {
-        val paint = Paint(Paint.ANTI_ALIAS_FLAG);
-        paint.textSize = 10F;
-        paint.setTypeface(Typeface.MONOSPACE);
-        paint.strokeWidth = 1F;
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+        paint.textSize = resolveSp(10F)
+        paint.typeface = Typeface.MONOSPACE
+        paint.strokeWidth = 1F
         paint
     }
 

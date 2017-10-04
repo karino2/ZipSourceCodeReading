@@ -18,7 +18,7 @@ class TextUtils {
                 buf = tempBuf
                 tempBuf = null
             }
-            if((buf == null) or (buf!!.size < len)) {
+            if((buf == null) || (buf!!.size < len)) {
                 buf = CharArray(ArrayUtils.idealCharArraySize(len))
             }
             return buf!!

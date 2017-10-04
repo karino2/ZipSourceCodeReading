@@ -20,6 +20,7 @@ import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.Disposable
 import io.reactivex.functions.BiFunction
 import io.reactivex.schedulers.Schedulers
+import karino2.livejournal.com.zipsourcecodereading.text.LongTextView
 import syntaxhighlight.ParseResult
 import java.io.File
 import java.util.concurrent.TimeUnit
@@ -87,7 +88,8 @@ class SourceViewActivity : AppCompatActivity() {
     }
 
     private fun searchPrevious() {
-        val text = sourceTextView.getText().toString()
+        /*
+        val text = sourceTextView.text
         val search = searchField.text.toString()
         if (search.length == 0) {
             return
@@ -112,10 +114,12 @@ class SourceViewActivity : AppCompatActivity() {
                 }
             }
         }
+        */
     }
 
 
     private fun searchNext() {
+        /*
         val text = sourceTextView.getText().toString()
         val search = searchField.text.toString()
         if (search.length == 0) {
@@ -141,6 +145,7 @@ class SourceViewActivity : AppCompatActivity() {
                 }
             }
         }
+        */
 
     }
 
@@ -190,10 +195,13 @@ class SourceViewActivity : AppCompatActivity() {
     var firstTime = true
 
 
+    /*
     private val scrollView: ScrollView by lazy {
         findViewById(R.id.scrollView) as ScrollView
     }
+    */
 
+    /*
     private fun scrollPageUp() {
         scrollView.smoothScrollBy(0, -(2*scrollView.height)/3)
     }
@@ -201,12 +209,15 @@ class SourceViewActivity : AppCompatActivity() {
     private fun scrollPageDown() {
         scrollView.smoothScrollBy(0, (2*scrollView.height)/3)
     }
+    */
 
-    fun tryScroll(tv : TextView, lineNum: Int) : Boolean {
+    fun tryScroll(tv : LongTextView, lineNum: Int) : Boolean {
+        /*
         val sv = scrollView
         val layout = tv.layout
         if(layout == null)
             return false
+            */
 
         // now layout is done before setText is called. So never catch up to the timing of OnLayoutChangeListener anymore (I guess).
         /*
@@ -221,7 +232,7 @@ class SourceViewActivity : AppCompatActivity() {
             return true
         }
         */
-        scrollToLine(sv, layout, lineNum)
+        // scrollToLine(sv, layout, lineNum)
         return true
     }
 
@@ -230,7 +241,7 @@ class SourceViewActivity : AppCompatActivity() {
         sv.smoothScrollTo(0, layout.getLineTop(lineNum))
     }
 
-    fun startTryScroll(tv: TextView, lineNum: Int) {
+    fun startTryScroll(tv: LongTextView, lineNum: Int) {
         if(!tryScroll(tv, lineNum)) {
             handler.postDelayed({ startTryScroll(tv, lineNum)}, 50)
         }
@@ -238,8 +249,9 @@ class SourceViewActivity : AppCompatActivity() {
     }
 
 
-    private val sourceTextView: TextView by lazy {
-        val sv = (findViewById(R.id.sourceTextView) as TextView)
+    private val sourceTextView: LongTextView by lazy {
+        val sv = (findViewById(R.id.sourceTextView) as LongTextView)
+        /*
         sv.setOnKeyListener { view, keyCode, keyEvent ->
             if(keyEvent.action == KeyEvent.ACTION_DOWN) {
 
@@ -259,6 +271,7 @@ class SourceViewActivity : AppCompatActivity() {
                 false
             }
         }
+        */
         sv
     }
 
@@ -298,7 +311,7 @@ class SourceViewActivity : AppCompatActivity() {
 
                     val tooLarge = content.count() > 100*1024
 
-                    tv.setText(content, TextView.BufferType.SPANNABLE)
+                    tv.text = SpannableString(content)
 
                     if(!tooLarge) {
                         startColoring(zipEntryName, content)

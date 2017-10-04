@@ -4,20 +4,10 @@ import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.Rect
-import android.text.Layout
 import android.text.SpannableString
 import android.text.TextPaint
-import android.text.Layout.DIR_RIGHT_TO_LEFT
 import android.text.style.AlignmentSpan
 import android.text.Spanned
-
-
-
-
-
-
-
-
 
 
 /**
@@ -25,22 +15,22 @@ import android.text.Spanned
  * ReadOnly, no emoji support, no rtl support.
  */
 class Layout(val text: SpannableString, val textPaint: TextPaint, var width: Int, val spacingmult: Float, val spacingadd: Float, val includepad: Boolean) {
-    var mFontMetricsInt: Paint.FontMetricsInt?
-    private var mChs: CharArray?
-    private var mWidths: FloatArray?
+    var mFontMetricsInt: Paint.FontMetricsInt? =  Paint.FontMetricsInt()
+    private var mChs: CharArray? = null
+    private var mWidths: FloatArray? = null
 
-    init {
-        mFontMetricsInt = Paint.FontMetricsInt()
-        mChs = null
-        mWidths = null
+    companion object {
+        fun create(text: SpannableString, textPaint: TextPaint, width: Int, spacingmult: Float, spacingadd: Float, includepad: Boolean): Layout {
+            val ret = Layout(text, textPaint, width, spacingmult, spacingadd, includepad)
+            ret.generate(text, 0, text.length, textPaint, width, spacingmult, spacingadd, includepad, includepad, false, false)
 
-
-        generate(text, 0, text.length, textPaint, width, spacingmult, spacingadd, includepad, includepad, false, false)
-
-        mChs = null
-        mWidths = null
-        mFontMetricsInt = null
+            ret.mChs = null
+            ret.mWidths = null
+            ret.mFontMetricsInt = null
+            return ret
+        }
     }
+
 
     var lineCount = 0
 
@@ -68,6 +58,7 @@ class Layout(val text: SpannableString, val textPaint: TextPaint, var width: Int
      * Get the alignment of the specified paragraph, taking into account
      * markup attached to it.
      */
+    /*
     fun getParagraphAlignment(line: Int): Layout.Alignment {
         var align = Layout.Alignment.ALIGN_NORMAL
 
@@ -83,6 +74,7 @@ class Layout(val text: SpannableString, val textPaint: TextPaint, var width: Int
 
         return align
     }
+    */
 
     private val FIRST_CJK = '\u2E80'
     /**
@@ -340,14 +332,14 @@ class Layout(val text: SpannableString, val textPaint: TextPaint, var width: Int
                          * after but not before.
                          */
 
-                        if (((c == ' ') or (c == '\t')
-                            or
-                                (((c == '.') or (c == ',') or (c == ':') or (c == ';')) and
-                                    ((j - 1 < here) or !Character.isDigit(chs[j - 1 - start])) and
-                                    ((j + 1 >= next) or !Character.isDigit(chs[j + 1 - start])))
-                            or
-                                ((((c == '/') or (c == '-')) and ((j + 1 >= next) or !Character.isDigit(chs[j + 1 - start]))))
-                            or
+                        if (((c == ' ') || (c == '\t')
+                            ||
+                                (((c == '.') || (c == ',') || (c == ':') || (c == ';')) &&
+                                    ((j - 1 < here) || !Character.isDigit(chs[j - 1 - start])) &&
+                                    ((j + 1 >= next) || !Character.isDigit(chs[j + 1 - start])))
+                            ||
+                                ((((c == '/') || (c == '-')) and ((j + 1 >= next) || !Character.isDigit(chs[j + 1 - start]))))
+                            ||
                                 (((c >= FIRST_CJK) and isIdeographic(c, true) and
                                         (j + 1 < next) and isIdeographic(chs[j + 1 - start], false)))))
                         {
@@ -551,16 +543,16 @@ class Layout(val text: SpannableString, val textPaint: TextPaint, var width: Int
         val j = lineCount
         val off = j * 1
         val want = off + 1 + TOP
-        var lines = this.lines
+        var tmplines = this.lines
 
         // Log.e("text", "line " + start + " to " + end + (last ? "===" : ""));
 
-        if (want >= lines.size) {
+        if (want >= tmplines.size) {
             val nlen = ArrayUtils.idealIntArraySize(want + 1)
             val grow = IntArray(nlen)
             System.arraycopy(lines, 0, grow, 0, lines.size)
             this.lines = grow
-            lines = grow
+            tmplines = grow
         }
 
         if (j == 0) {
@@ -850,8 +842,9 @@ class Layout(val text: SpannableString, val textPaint: TextPaint, var width: Int
 
             drawText(canvas, text, start, end, x.toFloat(), ltop, lbaseline.toFloat(), lbottom, textPaint, workPaint, hasTab,/* noparaspans, */ spacePaint,  spacePaths)
 
-
-
+            if ( lineNumberWidth != 0 ){
+                canvas.translate(-lineNumberWidth.toFloat(), 0F);
+            }
         }
 
 
@@ -899,12 +892,12 @@ class Layout(val text: SpannableString, val textPaint: TextPaint, var width: Int
         var segstart = here
 
         for(j in here..there) {
-            if((j == there) or (buf[j] == '\t')){
+            if((j == there) || (buf[j] == '\t')){
                 h += Styled.drawText(canvas, text,
                         start + segstart, start + j,
                         x + h,
                         top, y, bottom, textPaint, workPaint,
-                        (start + j !== end) or hasTab)
+                        (start + j !== end) || hasTab)
                 if((j != there) and (buf[j] == '\t')) {
                     spacePaint?.let {
                         canvas.translate(x+h, y)
