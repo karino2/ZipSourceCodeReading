@@ -2,6 +2,10 @@ package karino2.livejournal.com.zipsourcecodereading.text
 
 import android.text.GetChars
 import android.text.SpannableString
+import android.text.Spanned
+import android.text.style.ReplacementSpan
+
+
 
 
 /**
@@ -31,6 +35,42 @@ class TextUtils {
             synchronized(lock) {
                 tempBuf = temp
             }
+        }
+
+        fun getOffsetAfter(text: SpannableString, offset: Int): Int {
+            var offset = offset
+            val len = text.length
+
+            if (offset == len)
+                return len
+            if (offset == len - 1)
+                return len
+
+            val c = text[offset]
+
+            if (c in '\uD800'..'\uDBFF') {
+                val c1 = text[offset + 1]
+
+                if (c1 in '\uDC00'..'\uDFFF')
+                    offset += 2
+                else
+                    offset += 1
+            } else {
+                offset += 1
+            }
+
+            val spans = text.getSpans(offset, offset,
+                    ReplacementSpan::class.java)
+
+            for (i in spans.indices) {
+                val start = text.getSpanStart(spans[i])
+                val end = text.getSpanEnd(spans[i])
+
+                if (start < offset && end > offset)
+                    offset = end
+            }
+
+            return offset
         }
 
         fun indexOf(s: SpannableString, ch: Char, start: Int, end: Int): Int {

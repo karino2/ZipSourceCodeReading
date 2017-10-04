@@ -8,6 +8,34 @@ import android.text.SpannableString
 import android.text.TextPaint
 import android.text.style.AlignmentSpan
 import android.text.Spanned
+import android.R.attr.left
+import android.text.style.LeadingMarginSpan
+import android.text.style.TabStopSpan
+import android.R.id.tabs
+import android.R.attr.right
+import android.text.TextUtils.getOffsetAfter
+import android.text.Layout.Directions
+import android.text.Layout.DIR_RIGHT_TO_LEFT
+import android.text.Layout.DIR_RIGHT_TO_LEFT
+import android.opengl.ETC1.getHeight
+import android.opengl.ETC1.getWidth
+import android.text.Layout.DIR_LEFT_TO_RIGHT
+import android.graphics.Bitmap
+import android.text.style.ReplacementSpan
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 /**
@@ -45,6 +73,84 @@ class Layout(val text: SpannableString, val textPaint: TextPaint, var width: Int
     fun getLineStart(line : Int) = lines[line+START] and START_MASK
     fun getLineContainsTab(line: Int) =  lines[line + TAB] and TAB_MASK !== 0
 
+    fun getParagraphLeft(line: Int) : Int {
+
+        var left = 0
+
+        var par = false
+        val off = getLineStart(line)
+        if (off == 0 || (text as java.lang.CharSequence).charAt(off - 1) === '\n')
+            par = true
+
+        val sp : Spanned = text
+        val spans = sp.getSpans(getLineStart(line),
+                getLineEnd(line),
+                LeadingMarginSpan::class.java)
+
+        for (i in spans.indices) {
+            var margin = par
+            val span = spans[i]
+            if (span is LeadingMarginSpan.LeadingMarginSpan2) {
+                val count = span.leadingMarginLineCount
+                margin = count >= line
+            }
+            left += span.getLeadingMargin(margin)
+        }
+        return left
+    }
+
+    fun getLineVisibleEnd(line: Int) =  getLineVisibleEnd(line, getLineStart(line), getLineStart(line+1))
+
+    fun getLineMax(line : Int) : Float {
+        val start = getLineStart(line)
+        val end = getLineVisibleEnd(line)
+
+        val tab = getLineContainsTab(line)
+
+
+        return measureText(textPaint, workPaint,
+                text, start, end, null, tab)
+
+    }
+
+    fun getParagraphRight(line : Int) : Int {
+        var right = width
+
+        var par = false
+        val off = getLineStart(line)
+        if (off == 0 || (text as java.lang.CharSequence).charAt(off - 1) === '\n')
+            par = true
+
+        val sp :Spanned = text
+        val spans = sp.getSpans(getLineStart(line),
+                getLineEnd(line),
+                LeadingMarginSpan::class.java)
+
+        for (i in spans.indices) {
+            right -= spans[i].getLeadingMargin(par)
+        }
+        return right
+    }
+
+    fun getLineRight(line : Int) : Float {
+        val align = getParagraphAlignment(line)
+        when(align) {
+            android.text.Layout.Alignment.ALIGN_NORMAL -> {
+                return getParagraphLeft(line) + getLineMax(line)
+            }
+            android.text.Layout.Alignment.ALIGN_OPPOSITE-> {
+                return width.toFloat()
+            }
+            else -> {
+                val left = getParagraphLeft(line)
+                val right = getParagraphRight(line)
+                val max = getLineMax(line) as Int and 1.inv()
+
+                return (right - (right - left - max) / 2).toFloat()
+            }
+        }
+
+    }
 
     // for non-rtl support and gravity is always normal, this function always return 0
     fun getLineLeft(line: Int) = 0f
@@ -58,9 +164,8 @@ class Layout(val text: SpannableString, val textPaint: TextPaint, var width: Int
      * Get the alignment of the specified paragraph, taking into account
      * markup attached to it.
      */
-    /*
-    fun getParagraphAlignment(line: Int): Layout.Alignment {
-        var align = Layout.Alignment.ALIGN_NORMAL
+    fun getParagraphAlignment(line: Int): android.text.Layout.Alignment {
+        var align = android.text.Layout.Alignment.ALIGN_NORMAL
 
         val sp = text as Spanned
         val spans = sp.getSpans(getLineStart(line),
@@ -74,7 +179,6 @@ class Layout(val text: SpannableString, val textPaint: TextPaint, var width: Int
 
         return align
     }
-    */
 
     private val FIRST_CJK = '\u2E80'
     /**
@@ -589,7 +693,7 @@ class Layout(val text: SpannableString, val textPaint: TextPaint, var width: Int
 
         lines[off + START] = start
 
-        height = below - above + extra
+        _height = below - above + extra
         descent = below + extra
 
         if (tab)
@@ -604,6 +708,95 @@ class Layout(val text: SpannableString, val textPaint: TextPaint, var width: Int
         lineCount++
         return v
     }
+
+
+    private fun measureText(paint: TextPaint,
+                            workPaint: TextPaint,
+                            text: SpannableString,
+                            start: Int, offset: Int, end: Int,
+                            trailing: Boolean, alt: Boolean,
+                            hasTabs: Boolean): Float {
+        var trailing = trailing
+        var buf: CharArray? = null
+
+        if (hasTabs) {
+            buf = TextUtils.obtain(end - start)
+            text.getChars(start, end, buf, 0)
+        }
+
+        var h = 0f
+
+        var here = 0
+
+        if (alt)
+            trailing = !trailing
+
+        var there = here + 1
+        if (there > end - start)
+            there = end - start
+
+        var segstart = here
+        var j = if (hasTabs) here else there
+        while (j <= there) {
+            var codept = 0
+
+            if (hasTabs && j < there) {
+                codept = buf!![j].toInt()
+            }
+
+            if (codept >= 0xD800 && codept <= 0xDFFF && j + 1 < there) {
+                codept = Character.codePointAt(buf, j)
+
+                /*
+                if (codept >= MIN_EMOJI && codept <= MAX_EMOJI) {
+                    bm = EMOJI_FACTORY.getBitmapFromAndroidPua(codept)
+                }
+                */
+            }
+
+            if (j == there || codept == '\t'.toInt()) {
+                val segw: Float
+
+                if (offset < start + j || trailing && offset <= start + j) {
+                    h += Styled.measureText(paint, workPaint, text,
+                            start + segstart, offset, null)
+                    return h
+                }
+
+                segw = Styled.measureText(paint, workPaint, text,
+                        start + segstart, start + j, null)
+
+                if (offset < start + j || trailing && offset <= start + j) {
+                    h += segw - Styled.measureText(paint, workPaint,
+                            text,
+                            start + segstart,
+                            offset, null)
+                    return h
+                }
+
+                h += segw
+
+                if (j != there && buf!![j] == '\t') {
+                    if (offset == start + j)
+                        return h
+
+                    h = nextTab(h)
+                }
+
+                segstart = j + 1
+            }
+            j++
+        }
+
+        here = there
+
+
+        if (hasTabs)
+            TextUtils.recycle(buf!!)
+
+        return h
+    }
+
 
     /**
      * Measure width of a run of text on a single line that is known to all be
@@ -736,8 +929,13 @@ class Layout(val text: SpannableString, val textPaint: TextPaint, var width: Int
 
     val tempRect by lazy { Rect() }
 
-    var height = 0
-    fun getLineTop(line: Int) = height * line
+    var _height = 0
+
+    val height
+    get() = getLineTop(lineCount)
+
+
+    fun getLineTop(line: Int) = _height * line
 
 
     fun getLineForVertical(vertical: Int): Int {
@@ -746,7 +944,7 @@ class Layout(val text: SpannableString, val textPaint: TextPaint, var width: Int
         var guess: Int
         while (high - low > 1) {
             guess = high + low shr 1
-            if (guess * height > vertical) {
+            if (guess * _height > vertical) {
                 high = guess
             } else {
                 low = guess
@@ -934,6 +1132,163 @@ class Layout(val text: SpannableString, val textPaint: TextPaint, var width: Int
             } /* emoji support here if you wantj */
         }
         TextUtils.recycle(buf)
+    }
+
+    /**
+     * Get the primary horizontal position for the specified text offset.
+     * This is the location where a new character would be inserted in
+     * the paragraph's primary direction.
+     */
+    fun getPrimaryHorizontal(offset: Int) =  getHorizontal(offset, false, true)
+
+    private fun getHorizontal(offset: Int, trailing: Boolean, alt: Boolean): Float {
+        val line = getLineForOffset(offset)
+
+        return getHorizontal(offset, trailing, alt, line)
+    }
+
+    private fun getHorizontal(offset: Int, trailing: Boolean, alt: Boolean,
+                              line: Int): Float {
+        val start = getLineStart(line)
+        val end = getLineVisibleEnd(line)
+        val tab = getLineContainsTab(line)
+
+        var tabs: Array<TabStopSpan>? = null
+        if (tab) {
+            tabs = text.getSpans(start, end, TabStopSpan::class.java)
+        }
+
+        var wid = measureText(textPaint, workPaint, text, start, offset, end,
+                trailing, alt, tab)
+
+        if (offset > end) {
+            wid += measureText(textPaint, workPaint,
+                    text, end, offset, null, tab)
+        }
+
+        val align = getParagraphAlignment(line)
+        val left = getParagraphLeft(line)
+        val right = getParagraphRight(line)
+
+        if (align === android.text.Layout.Alignment.ALIGN_NORMAL) {
+            return left + wid
+        }
+
+        val max = getLineMax(line)
+
+        if (align === android.text.Layout.Alignment.ALIGN_OPPOSITE) {
+            return right - max + wid
+        } else { /* align == Alignment.ALIGN_CENTER */
+            val imax = max.toInt() and 1.inv()
+
+            return  left.toFloat() + ((right - left - imax) / 2).toFloat() + wid
+        }
+    }
+
+    private fun getOffsetAtStartOf(offset: Int): Int {
+        var offset = offset
+        if (offset == 0)
+            return 0
+
+        val c = text[offset]
+
+        if (c in '\uDC00'..'\uDFFF') {
+            val c1 = text[offset - 1]
+
+            if (c1 in '\uD800'..'\uDBFF')
+                offset -= 1
+        }
+
+        val spans = text.getSpans(offset, offset,
+                ReplacementSpan::class.java)
+
+        for (i in spans.indices) {
+            val start = (text as Spanned).getSpanStart(spans[i])
+            val end = (text as Spanned).getSpanEnd(spans[i])
+
+            if (offset in (start + 1)..(end - 1))
+                offset = start
+        }
+
+        return offset
+    }
+
+    /**
+     * Get the character offset on the specfied line whose position is
+     * closest to the specified horizontal position.
+     */
+    fun getOffsetForHorizontal(line: Int, horiz: Float): Int {
+        var max = getLineEnd(line) - 1
+        val min = getLineStart(line)
+        if (line == lineCount - 1)
+            max++
+
+        var best = min
+        var bestdist = Math.abs(getPrimaryHorizontal(best) - horiz)
+
+        var here = min
+
+        var there = here + 1
+        val swap = 1
+
+        if (there > max)
+            there = max
+
+        var high = there - 1 + 1
+        var low = here + 1 - 1
+        var guess: Int
+
+        while (high - low > 1) {
+            guess = (high + low) / 2
+            val adguess = getOffsetAtStartOf(guess)
+
+            if (getPrimaryHorizontal(adguess) * swap >= horiz * swap)
+                high = guess
+            else
+                low = guess
+        }
+
+        if (low < here + 1)
+            low = here + 1
+
+        if (low < there) {
+            low = getOffsetAtStartOf(low)
+
+            var dist = Math.abs(getPrimaryHorizontal(low) - horiz)
+
+            val aft = TextUtils.getOffsetAfter(text, low)
+            if (aft < there) {
+                val other = Math.abs(getPrimaryHorizontal(aft) - horiz)
+
+                if (other < dist) {
+                    dist = other
+                    low = aft
+                }
+            }
+
+            if (dist < bestdist) {
+                bestdist = dist
+                best = low
+            }
+        }
+
+        val dist2 = Math.abs(getPrimaryHorizontal(here) - horiz)
+
+        if (dist2 < bestdist) {
+            bestdist = dist2
+            best = here
+        }
+
+        here = there
+
+        val dist3 = Math.abs(getPrimaryHorizontal(max) - horiz)
+
+        if (dist3 < bestdist) {
+            bestdist = dist3
+            best = max
+        }
+
+        return best
     }
 
 }

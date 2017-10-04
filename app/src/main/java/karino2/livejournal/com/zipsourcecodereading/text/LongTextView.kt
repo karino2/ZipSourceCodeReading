@@ -1,16 +1,32 @@
 package karino2.livejournal.com.zipsourcecodereading.text
 
 import android.content.Context
-import android.graphics.Canvas
-import android.graphics.Paint
-import android.graphics.Path
-import android.graphics.Typeface
+import android.graphics.*
+import android.text.Selection
 import android.text.SpannableString
 import android.text.TextPaint
 import android.util.AttributeSet
 import android.util.TypedValue
 import android.view.View
 import android.view.ViewTreeObserver
+import android.view.Gravity
+import android.text.Selection.getSelectionStart
+import android.text.Selection.getSelectionEnd
+import android.view.animation.AnimationUtils
+import android.opengl.ETC1.getHeight
+import android.util.FloatMath
+import android.R.attr.right
+import android.R.attr.left
+import android.view.MotionEvent
+import android.R.attr.action
+import android.content.res.Configuration.HARDKEYBOARDHIDDEN_YES
+import android.text.Spannable
+import android.text.method.Touch.onTouchEvent
+import android.text.Selection.getSelectionEnd
+import android.text.Selection.getSelectionStart
+import android.text.Selection.getSelectionEnd
+import android.text.Selection.getSelectionStart
+
 
 
 
@@ -29,6 +45,8 @@ class LongTextView(context: Context, attrs: AttributeSet) : View(context, attrs)
 
         field = newText
 
+        movement.initialize(this, text)
+
         layout?.let {
             // This view does not support wrap_content, so chnaging text does not cause relayout.
             val want = layout!!.width
@@ -39,6 +57,7 @@ class LongTextView(context: Context, attrs: AttributeSet) : View(context, attrs)
 
     }
 
+    val movement = MovementMethod()
 
     var layout : Layout? = null
 
@@ -115,6 +134,206 @@ class LongTextView(context: Context, attrs: AttributeSet) : View(context, attrs)
         }
 
     }
+
+
+    private fun getInterestingRect(r: Rect, line: Int) {
+        convertFromViewportToContentCoordinates(r)
+
+        // Rectangle can can be expanded on first and last line to take
+        // padding into account.
+        if (line == 0) r.top -= paddingTop
+        if (line == layout!!.lineCount - 1) r.bottom += paddingBottom
+    }
+
+    private fun convertFromViewportToContentCoordinates(r: Rect) {
+        val horizontalOffset = viewportToContentHorizontalOffset()
+        r.left += horizontalOffset
+        r.right += horizontalOffset
+
+        val verticalOffset = viewportToContentVerticalOffset()
+        r.top += verticalOffset
+        r.bottom += verticalOffset
+    }
+
+    private fun viewportToContentHorizontalOffset(): Int {
+        return paddingLeft - scrollX
+    }
+
+    private fun viewportToContentVerticalOffset(): Int {
+        var offset = paddingTop - scrollY
+        /*
+        if (mGravity and Gravity.VERTICAL_GRAVITY_MASK !== Gravity.TOP) {
+            offset += getVerticalOffset(false)
+        }
+        */
+        return offset
+    }
+
+    /**
+     * Move the point, specified by the offset, into the view if it is needed.
+     * This has to be called after layout. Returns true if anything changed.
+     */
+    fun bringPointIntoView(offset: Int): Boolean {
+        var changed = false
+
+        val line = layout!!.getLineForOffset(offset)
+
+        val x = layout!!.getPrimaryHorizontal(offset).toInt() + lineNumberWidth
+        val top = layout!!.getLineTop(line)
+        val bottom = layout!!.getLineTop(line + 1)
+
+        val left = Math.floor(layout!!.getLineLeft(line).toDouble()).toInt()
+        val right = Math.ceil((layout!!.getLineRight(line) + lineNumberWidth).toDouble()).toInt()
+        var ht = layout!!.height
+
+        val forceScroll = true
+        if (forceScroll) {
+            ht += layout!!.getLineTop(7)
+        }
+
+        val grav: Int
+
+        when (layout!!.getParagraphAlignment(line)) {
+            android.text.Layout.Alignment.ALIGN_NORMAL -> grav = 1
+
+            android.text.Layout.Alignment.ALIGN_OPPOSITE -> grav = -1
+
+            else -> grav = 0
+        }
+
+        // grav *= layout!!.getParagraphDirection(line)
+
+        val hspace = this.right - this.left - paddingLeft - paddingRight
+        val vspace = this.bottom - this.top - paddingTop - paddingBottom
+
+        var hslack = (bottom - top) / 2
+        var vslack = hslack
+
+        if (vslack > vspace / 4)
+            vslack = vspace / 4
+        if (hslack > hspace / 4)
+            hslack = hspace / 4
+
+        var hs = scrollX
+        var vs = scrollY
+
+        if (top - vs < vslack)
+            vs = top - vslack
+        if (bottom - vs > vspace - vslack)
+            vs = bottom - (vspace - vslack)
+        if (ht - vs < vspace)
+            vs = ht - vspace
+        if (0 - vs > 0)
+            vs = 0
+
+        if (grav != 0) {
+            if (x - hs < hslack) {
+                hs = x - hslack
+            }
+            if (x - hs > hspace - hslack) {
+                hs = x - (hspace - hslack)
+            }
+        }
+
+        if (grav < 0) {
+            if (left - hs > 0)
+                hs = left
+            if (right - hs < hspace)
+                hs = right - hspace
+        } else if (grav > 0) {
+            if (right - hs < hspace)
+                hs = right - hspace
+            if (left - hs > 0)
+                hs = left
+        } else
+        /* grav == 0 */ {
+            if (right - left <= hspace) {
+                /*
+                 * If the entire text fits, center it exactly.
+                 */
+                hs = left - (hspace - (right - left)) / 2
+            } else if (x > right - hslack) {
+                /*
+                 * If we are near the right edge, keep the right edge
+                 * at the edge of the view.
+                 */
+                hs = right - hspace
+            } else if (x < left + hslack) {
+                /*
+                 * If we are near the left edge, keep the left edge
+                 * at the edge of the view.
+                 */
+                hs = left
+            } else if (left > hs) {
+                /*
+                 * Is there whitespace visible at the left?  Fix it if so.
+                 */
+                hs = left
+            } else if (right < hs + hspace) {
+                /*
+                 * Is there whitespace visible at the right?  Fix it if so.
+                 */
+                hs = right - hspace
+            } else {
+                /*
+                 * Otherwise, float as needed.
+                 */
+                if (x - hs < hslack) {
+                    hs = x - hslack
+                }
+                if (x - hs > hspace - hslack) {
+                    hs = x - (hspace - hslack)
+                }
+            }
+        }
+
+        if (hs != scrollX || vs != scrollY) {
+            scrollTo(hs, vs)
+            /*
+            if (mScroller == null) {
+                scrollTo(hs, vs)
+            } else {
+                val duration = AnimationUtils.currentAnimationTimeMillis() - mLastScroll
+                val dx = hs - mScrollX
+                val dy = vs - mScrollY
+
+                if (duration > ANIMATED_SCROLL_GAP) {
+                    mScroller.startScroll(mScrollX, mScrollY, dx, dy)
+                    // Jota Text Editor
+                    //awakenScrollBars(mScroller.getDuration());
+                    invalidate()
+                } else {
+                    if (!mScroller.isFinished()) {
+                        mScroller.abortAnimation()
+                    }
+
+                    scrollBy(dx, dy)
+                }
+
+                mLastScroll = AnimationUtils.currentAnimationTimeMillis()
+            }
+            */
+
+            changed = true
+        }
+
+        if (isFocused) {
+            // This offsets because getInterestingRect() is in terms of
+            // viewport coordinates, but requestRectangleOnScreen()
+            // is in terms of content coordinates.
+
+            val r = Rect(x, top, x + 1, bottom)
+            getInterestingRect(r, line)
+            r.offset(scrollX, scrollY)
+
+            if (requestRectangleOnScreen(r)) {
+                changed = true
+            }
+        }
+
+        return changed
+    }
+
     override fun onPreDraw(): Boolean {
         if(preDrawState != PREDRAW_STATE.PENDING)
             return true
@@ -123,42 +342,105 @@ class LongTextView(context: Context, attrs: AttributeSet) : View(context, attrs)
             assumeLayout()
         }
 
-        // TODO: goto line here.
+        var curs = selectionEnd
+        /*
+        if (selectionController != null && selectionController.isSelectionStartDragged()) {
+            curs = getSelectionStart()
+        }
+        */
+
+        var changed = false
+
+        if (curs >= 0) {
+            changed = bringPointIntoView(curs)
+        }
+
 
         preDrawState = PREDRAW_STATE.DONE
-        val changed = false
         return changed
     }
 
-    /**
-     * Returns true if anything changed.
-     */
-    // this function seems nothing for our case. just keep for documentation purpose.
-    /*
-    private fun bringTextIntoView(): Boolean {
-        var line = 0
+    var eatTouchRelease = false
+    var scrolled = false
 
-        val a = layout!!.getParagraphAlignment(line)
-        val hspace = right - left - paddingLeft - paddingRight
-
-        val extendedPaddingTop = paddingTop
-        val extendedPaddingBottom = paddingBottom
-
-        val vspace = bottom - top - extendedPaddingTop - extendedPaddingBottom
-        val ht = layout!!.height
-
-        var scrollx = Math.floor(layout!!.getLineLeft(line).toDouble()).toInt()
-        var scrolly = 0
+    override fun onTouchEvent(event: MotionEvent): Boolean {
+        val action = event.action
 
 
-        if (scrollx != scrollX || scrolly != scrollY) {
-            scrollTo(scrollx, scrolly)
-            return true
-        } else {
-            return false
+        if(action == MotionEvent.ACTION_DOWN) {
+            // Reset this state; it will be re-set if super.onTouchEvent
+            // causes focus to move to the view.
+            touchFocusSelected = false
+            scrolled = false
+        }
+
+        val superHandled = super.onTouchEvent(event)
+
+        /*
+          * Don't handle the release after a long press, because it will
+          * move the selection away from whatever the menu action was
+          * trying to affect.
+          */
+        if(eatTouchRelease && action == MotionEvent.ACTION_UP) {
+            eatTouchRelease = false
+            return superHandled
+        }
+
+        if(layout != null){
+            var handled = false
+
+            // Save previous selection, in case this event is used to show the IME.
+            val oldSelStart = selectionStart
+            val oldSelEnd = selectionEnd
+
+            val oldScrollX = scrollX
+            val oldScrollY = scrollY
+
+            handled = handled or movement.onTouchEvent(this, text, event)
+
+            if (action == MotionEvent.ACTION_UP && isFocused && !scrolled) {
+                // Cannot be done by CommitSelectionReceiver, which might not always be called,
+                // for instance when dealing with an ExtractEditText.
+                onTapUpEvent(oldSelStart, oldSelEnd)
+            }
+            if (handled) {
+                return true
+            }
+        }
+
+        return superHandled
+    }
+
+    private fun onTapUpEvent(prevStart: Int, prevEnd: Int) {
+        val start = selectionStart
+        val end = selectionEnd
+
+        if (start == end) {
+            val selectAllOnFocus = false
+
+            val tapInsideSelectAllOnFocus = selectAllOnFocus && prevStart == 0 &&
+                    prevEnd == text.length
+            if (start >= prevStart && start < prevEnd && !tapInsideSelectAllOnFocus) {
+                // Restore previous selection
+                Selection.setSelection(text, prevStart, prevEnd)
+
+                // Tapping inside the selection displays the cut/copy/paste context menu
+                startTextSelectionMode()
+                // getSelectionController().show()
+            } else {
+                // Tapping outside stops selection mode, if any
+                stopTextSelectionMode()
+
+                /*
+                val selectAllGotFocus = selectAllOnFocus && touchFocusSelected
+                if (hasInsertionController() && !selectAllGotFocus) {
+                    getInsertionController().show()
+                    hideSelectionModifierCursorController()
+                }
+                */
+            }
         }
     }
-    */
 
     private fun setupTabPath() {
         tabPath.reset()
@@ -224,6 +506,7 @@ class LongTextView(context: Context, attrs: AttributeSet) : View(context, attrs)
         ArrowKeyMovementMethod.setLineNumberWidth(mLineNumberWidth)
         Touch.setLineNumberWidth(mLineNumberWidth)
         */
+        MovementMethod.lineNumberWidth = lineNumberWidth
         var want = width - paddingLeft - paddingRight - lineNumberWidth
 
         if (wrapWidthNumber > 0) {
@@ -290,6 +573,18 @@ class LongTextView(context: Context, attrs: AttributeSet) : View(context, attrs)
         val voffsetCursor = 0
         val voffsetText = 0
 
+        if(preDrawState == PREDRAW_STATE.DONE) {
+            val observer = viewTreeObserver
+            observer?.let {
+                observer.removeOnPreDrawListener(this)
+                preDrawState = PREDRAW_STATE.NOT_REGISTERED
+            }
+        }
+
+        if(layout == null) {
+            assumeLayout()
+        }
+
         val selLine = layout!!.getLineForOffset(selEnd)
 
 
@@ -311,5 +606,74 @@ class LongTextView(context: Context, attrs: AttributeSet) : View(context, attrs)
         paint.strokeWidth = 1F
         paint
     }
+
+    val selectionStart : Int
+    get() = Selection.getSelectionStart(text)
+
+    val selectionEnd : Int
+    get() = Selection.getSelectionEnd(text)
+
+
+    var touchFocusSelected = false
+
+    /**
+     * Returns true, only while processing a touch gesture, if the initial
+     * touch down event caused focus to move to the text view and as a result
+     * its selection changed.  Only valid while processing the touch gesture
+     * of interest.
+     */
+    val didTouchFocusSelect : Boolean
+    get() = touchFocusSelected
+
+    fun moveCursorToVisibleOffset() : Boolean {
+        val end = selectionEnd
+        val endline = layout!!.getLineForOffset(end)
+        val top = layout!!.getLineTop(endline)
+        val bottom = layout!!.getLineTop(endline+1)
+        val vspace = this.bottom - this.top - paddingTop - paddingBottom
+
+        val vslack = 0
+
+        val vs = scrollY
+
+        val line = if(top < (vs+vslack)) {
+            layout!!.getLineForVertical(vs+vslack+(bottom-top))
+        } else {
+            layout!!.getLineForVertical(vspace+vs-vslack-(bottom-top))
+        }
+
+        val hspace = this.right - this.left - paddingLeft - paddingRight
+        val hs = scrollX
+        val leftChar = layout!!.getOffsetForHorizontal(line, hs.toFloat())
+        val rightChar = layout!!.getOffsetForHorizontal(line, (hspace+hs).toFloat())
+
+        var newEnd = end
+        if (newEnd < leftChar) {
+            newEnd = leftChar
+        } else if (newEnd > rightChar) {
+            newEnd = rightChar
+        }
+
+        if (newEnd != end) {
+            Selection.setSelection(text, newEnd)
+            stopTextSelectionMode()
+            return true
+        }
+
+        return false
+
+    }
+
+    fun startTextSelectionMode() {}
+    fun stopTextSelectionMode() {}
+
+    fun moveToLine(line : Int) {
+        val offset = layout!!.getLineStart(line)
+        Selection.setSelection(text, offset, offset)
+
+        registerForPreDraw()
+        invalidate()
+    }
+
 
 }

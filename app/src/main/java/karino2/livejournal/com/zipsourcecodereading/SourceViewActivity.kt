@@ -212,27 +212,12 @@ class SourceViewActivity : AppCompatActivity() {
     */
 
     fun tryScroll(tv : LongTextView, lineNum: Int) : Boolean {
-        /*
-        val sv = scrollView
-        val layout = tv.layout
+        val layout = sourceTextView.layout
+
         if(layout == null)
             return false
-            */
 
-        // now layout is done before setText is called. So never catch up to the timing of OnLayoutChangeListener anymore (I guess).
-        /*
-        if(firstTime) {
-            firstTime = false
-            var onlayout : View.OnLayoutChangeListener = View.OnLayoutChangeListener{_, _, _, _, _, _, _, _, _ ->}
-            onlayout = View.OnLayoutChangeListener {_, _, _, _, _, _, _, _, _ ->
-                scrollToLine(sv, layout, lineNum)
-                sv.removeOnLayoutChangeListener(onlayout)
-            }
-            sv.addOnLayoutChangeListener(onlayout)
-            return true
-        }
-        */
-        // scrollToLine(sv, layout, lineNum)
+        sourceTextView.moveToLine(lineNum)
         return true
     }
 
