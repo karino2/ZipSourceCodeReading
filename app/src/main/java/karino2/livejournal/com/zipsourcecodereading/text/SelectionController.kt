@@ -17,7 +17,7 @@ class SelectionController(val parent: LongTextView) : ViewTreeObserver.OnTouchMo
     private val mStartHandle by lazy {
         object : HandleView(parent, HandleView.HandleSide.LEFT) {
             override fun updatePosition(handleView: HandleView, x: Int, y: Int) {
-                updatePosition(handleView, x, y)
+                _updatePosition(handleView, x, y)
             }
 
         }
@@ -27,7 +27,7 @@ class SelectionController(val parent: LongTextView) : ViewTreeObserver.OnTouchMo
     private val mEndHandle by lazy {
         object : HandleView(parent, HandleView.HandleSide.RIGHT) {
             override fun updatePosition(handleView: HandleView, x: Int, y: Int) {
-                updatePosition(handleView, x, y)
+                _updatePosition(handleView, x, y)
             }
        }
     }
@@ -64,7 +64,7 @@ class SelectionController(val parent: LongTextView) : ViewTreeObserver.OnTouchMo
         isShowing = false
     }
 
-    fun updatePosition(handle: HandleView, x: Int, y: Int) {
+    fun _updatePosition(handle: HandleView, x: Int, y: Int) {
         var selectionStart = parent.selectionStart
         var selectionEnd = parent.selectionEnd
 

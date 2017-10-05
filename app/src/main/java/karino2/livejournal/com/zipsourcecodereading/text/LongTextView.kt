@@ -3,9 +3,8 @@ package karino2.livejournal.com.zipsourcecodereading.text
 import android.content.ClipboardManager
 import android.content.Context
 import android.graphics.*
-import android.text.Selection
-import android.text.SpannableString
-import android.text.TextPaint
+import android.text.*
+import android.text.style.UpdateAppearance
 import android.util.AttributeSet
 import android.util.TypedValue
 import android.view.*
@@ -171,6 +170,8 @@ class LongTextView(context: Context, attrs: AttributeSet) : View(context, attrs)
             if(!selectCurrentWord()) {
                 return false
             }
+            // test code.
+            invalidate()
         }
         actionMode = startActionMode(SelectionActionModeCallback())
         return actionMode != null
@@ -231,11 +232,76 @@ class LongTextView(context: Context, attrs: AttributeSet) : View(context, attrs)
         return selected
     }
 
+
+    inner class ChangeWatcher : SpanWatcher {
+        override fun onSpanChanged(buf: Spannable, what: Any, oldStart: Int, newStart: Int, oldEnd: Int, newEnd: Int) {
+            if(what == Selection.SELECTION_START || what == Selection.SELECTION_END) {
+                if(oldStart >= 0 || newStart >= 0) {
+                    registerForPreDraw()
+                    invalidate()
+                    highlightPathBogus = true
+                }
+            }
+            if(what is UpdateAppearance) {
+                if(isOverlap(oldStart, oldEnd) ||
+                        isOverlap(newStart, newEnd)) {
+                    highlightPathBogus = true
+                    invalidate()
+                }
+            }
+            /*
+            var selChanged = false
+            var newSelStart = -1
+            var newSelEnd = -1
+
+            if(what == Selection.SELECTION_END) {
+                selChanged = true
+                newSelEnd = newStart
+
+                if(oldStart >= 0 || newStart >= 0) {
+                    registerForPreDraw()
+                }
+            }
+            if(what == Selection.SELECTION_START) {
+                selChanged = true
+                newSelStart = newStart
+
+                if(oldStart >= 0 || newStart >= 0) {
+                    registerForPreDraw()
+                }
+            }
+            */
+
+
+
+        }
+
+        override fun onSpanRemoved(p0: Spannable?, p1: Any?, p2: Int, p3: Int) {
+            invalidate()
+        }
+
+        override fun onSpanAdded(p0: Spannable?, p1: Any?, p2: Int, p3: Int) {
+            invalidate()
+        }
+    }
+
+    private fun isOverlap(start: Int, end: Int): Boolean {
+        return true
+    }
+
+    val spanChangeWatcher = ChangeWatcher()
+    val PRIORITY = 100
+
     var text = SpannableString("Loading...")
     set(newText) {
         textPaint.textScaleX = 1F
 
         field = newText
+
+
+
+        // val watches = text.getSpans(0, text.length, )
+        text.setSpan(spanChangeWatcher, 0, text.length, Spanned.SPAN_INCLUSIVE_INCLUSIVE or (PRIORITY shl Spanned.SPAN_PRIORITY_SHIFT))
 
         movement.initialize(this, text)
 
@@ -758,11 +824,16 @@ class LongTextView(context: Context, attrs: AttributeSet) : View(context, attrs)
         setMeasuredDimension(width, height)
     }
 
+    val highlightPath by lazy {
+        Path()
+    }
+
+    var highlightPathBogus = true
+    val highlightPathPaint by lazy {  Paint(Paint.ANTI_ALIAS_FLAG) }
+
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
 
-        val selStart = -1
-        val selEnd = -1
         val voffsetCursor = 0
         val voffsetText = 0
 
@@ -778,10 +849,31 @@ class LongTextView(context: Context, attrs: AttributeSet) : View(context, attrs)
             assumeLayout()
         }
 
+
+        val selStart = selectionStart
+        val selEnd = selectionEnd
+        var highlight : Path? = null
+
+        if(selStart >= 0 && selStart != selEnd) {
+            if(highlightPathBogus) {
+                highlightPath.reset()
+                layout!!.getSelectionPath(selStart, selEnd, highlightPath)
+
+                highlightPathPaint.setColor(0xFFBBDDFF.toInt())
+                highlightPathPaint.setStyle(Paint.Style.FILL)
+
+                highlightPathBogus = false
+                highlight = highlightPath
+            }
+        }
+
+
+
+
         val selLine = layout!!.getLineForOffset(selEnd)
 
 
-        layout!!.draw(canvas, voffsetCursor-voffsetText, selLine, lineNumberWidth, lineNumberPaint, spacePaths)
+        layout!!.draw(canvas, highlight, highlightPathPaint, voffsetCursor-voffsetText, selLine, lineNumberWidth, lineNumberPaint, spacePaths)
 
     }
 

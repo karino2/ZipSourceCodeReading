@@ -5,37 +5,12 @@ import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.Rect
 import android.text.SpannableString
+import android.text.Spanned
 import android.text.TextPaint
 import android.text.style.AlignmentSpan
-import android.text.Spanned
-import android.R.attr.left
 import android.text.style.LeadingMarginSpan
-import android.text.style.TabStopSpan
-import android.R.id.tabs
-import android.R.attr.right
-import android.text.TextUtils.getOffsetAfter
-import android.text.Layout.Directions
-import android.text.Layout.DIR_RIGHT_TO_LEFT
-import android.text.Layout.DIR_RIGHT_TO_LEFT
-import android.opengl.ETC1.getHeight
-import android.opengl.ETC1.getWidth
-import android.text.Layout.DIR_LEFT_TO_RIGHT
-import android.graphics.Bitmap
 import android.text.style.ReplacementSpan
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+import android.text.style.TabStopSpan
 
 
 /**
@@ -159,6 +134,88 @@ class Layout(val text: SpannableString, val textPaint: TextPaint, var width: Int
      * Return the text offset after the last character on the specified line.
      */
     fun getLineEnd(line: Int) = getLineStart(line + 1)
+
+
+    private fun addSelection(line: Int, start: Int, end: Int,
+                             top: Int, bottom: Int, dest: Path) {
+        val linestart = getLineStart(line)
+        var lineend = getLineEnd(line)
+        if (lineend > linestart && (text as java.lang.CharSequence).charAt(lineend - 1) === '\n')
+            lineend--
+
+        var here = linestart
+
+        var there = here + DIRECTION_ZERO
+        if (there > lineend)
+            there = lineend
+
+        if (start <= there && end >= here) {
+            val st = Math.max(start, here)
+            val en = Math.min(end, there)
+
+            if (st != en) {
+                val h1 = getHorizontal(st, false, false, line)
+                val h2 = getHorizontal(en, true, false, line)
+
+                dest.addRect(h1, top.toFloat(), h2, bottom.toFloat(), Path.Direction.CW)
+            }
+        }
+
+    }
+
+
+    /**
+     * Fills in the specified Path with a representation of a highlight
+     * between the specified offsets.  This will often be a rectangle
+     * or a potentially discontinuous set of rectangles.  If the start
+     * and end are the same, the returned path is empty.
+     */
+    fun getSelectionPath(start: Int, end: Int, dest: Path) {
+        var start = start
+        var end = end
+        dest.reset()
+
+        if (start == end)
+            return
+
+        if (end < start) {
+            val temp = end
+            end = start
+            start = temp
+        }
+
+        val startline = getLineForOffset(start)
+        val endline = getLineForOffset(end)
+
+        var top = getLineTop(startline)
+        var bottom = getLineBottom(endline)
+
+        if (startline == endline) {
+            addSelection(startline, start, end, top, bottom, dest)
+        } else {
+
+            addSelection(startline, start, getLineEnd(startline),
+                    top, getLineBottom(startline), dest)
+
+            dest.addRect(getLineRight(startline), top.toFloat(),
+                    width.toFloat(), getLineBottom(startline).toFloat(), Path.Direction.CW)
+
+            for (i in startline + 1 until endline) {
+                top = getLineTop(i)
+                bottom = getLineBottom(i)
+                dest.addRect(0f, top.toFloat(), width.toFloat(), bottom.toFloat(), Path.Direction.CW)
+            }
+
+            top = getLineTop(endline)
+            bottom = getLineBottom(endline)
+
+            addSelection(endline, getLineStart(endline), end,
+                    top, bottom, dest)
+
+            dest.addRect(0f, top.toFloat(), getLineLeft(endline), bottom.toFloat(), Path.Direction.CW)
+        }
+    }
+
 
     /**
      * Get the alignment of the specified paragraph, taking into account
@@ -986,7 +1043,7 @@ class Layout(val text: SpannableString, val textPaint: TextPaint, var width: Int
     var descent = 0
 
 
-    fun draw(canvas: Canvas, cursorOffsetVertical: Int, selLine: Int, lineNumberWidth: Int, lineNumberPaint: Paint, spacePaths: Array<Path>) {
+    fun draw(canvas: Canvas, highlight: Path?, highlightPaint: Paint?, cursorOffsetVertical: Int, selLine: Int, lineNumberWidth: Int, lineNumberPaint: Paint, spacePaths: Array<Path>) {
         if(!canvas.getClipBounds(tempRect)) {
             return
         }
@@ -1002,6 +1059,24 @@ class Layout(val text: SpannableString, val textPaint: TextPaint, var width: Int
 
         var previousLineBottom = getLineTop(first)
         var previousLineEnd = getLineStart(first)
+
+        highlight?.let {
+            if(lineNumberWidth != 0) {
+                canvas.translate(lineNumberWidth.toFloat(), 0f)
+            }
+            if(cursorOffsetVertical != 0) {
+                canvas.translate(0f, cursorOffsetVertical.toFloat())
+            }
+            canvas.drawPath(highlight, highlightPaint)
+
+            if(cursorOffsetVertical != 0) {
+                canvas.translate(0f, -cursorOffsetVertical.toFloat())
+            }
+            if(lineNumberWidth != 0) {
+                canvas.translate(-lineNumberWidth.toFloat(), 0f)
+            }
+        }
+
 
         for(i in first..last) {
             val start = previousLineEnd
