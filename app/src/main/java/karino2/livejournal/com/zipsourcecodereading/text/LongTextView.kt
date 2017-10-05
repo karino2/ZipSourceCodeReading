@@ -1,5 +1,6 @@
 package karino2.livejournal.com.zipsourcecodereading.text
 
+import android.content.ClipboardManager
 import android.content.Context
 import android.graphics.*
 import android.text.Selection
@@ -7,29 +8,8 @@ import android.text.SpannableString
 import android.text.TextPaint
 import android.util.AttributeSet
 import android.util.TypedValue
-import android.view.View
-import android.view.ViewTreeObserver
-import android.view.Gravity
-import android.text.Selection.getSelectionStart
-import android.text.Selection.getSelectionEnd
-import android.view.animation.AnimationUtils
-import android.opengl.ETC1.getHeight
-import android.util.FloatMath
-import android.R.attr.right
-import android.R.attr.left
-import android.view.MotionEvent
-import android.R.attr.action
-import android.content.res.Configuration.HARDKEYBOARDHIDDEN_YES
-import android.text.Spannable
-import android.text.method.Touch.onTouchEvent
-import android.text.Selection.getSelectionEnd
-import android.text.Selection.getSelectionStart
-import android.text.Selection.getSelectionEnd
-import android.text.Selection.getSelectionStart
-
-
-
-
+import android.view.*
+import karino2.livejournal.com.zipsourcecodereading.R
 
 
 /**
@@ -38,6 +18,218 @@ import android.text.Selection.getSelectionStart
  * LongTextView for long text with coloring. Do not support WRAP_CONTENT and make resize faster.
  */
 class LongTextView(context: Context, attrs: AttributeSet) : View(context, attrs), ViewTreeObserver.OnPreDrawListener{
+
+    init {
+        isFocusable = true
+        isFocusableInTouchMode = true
+        isLongClickable = true
+    }
+
+
+
+    val handleLeftDrawable by lazy {
+        getResources().getDrawable(R.drawable.text_select_handle_left)
+    }
+
+    val handleRightDrawable by lazy {
+        getResources().getDrawable(R.drawable.text_select_handle_right)
+    }
+
+    val lastDownPositionX
+    get() = selectionController.lastTapPositionX
+
+    val lastDownPositionY
+    get() = selectionController.lastTapPositionY
+
+
+    fun isPositionOnText(x: Float, y: Float): Boolean {
+        if(layout == null) { return false }
+
+        val line = getLineFromViewportY(y.toInt())
+
+        val contX = x + viewportToContentHorizontalOffset()
+        if (contX < layout!!.getLineLeft(line))
+            return false
+
+        val end = layout!!.getLineRight(line)
+        if (contX > layout!!.getLineRight(line))
+            return false
+        return true
+    }
+
+    var actionMode : ActionMode? = null
+
+    fun touchPositionInSelection() : Boolean {
+        if(selectionStart == selectionEnd) { return false }
+
+        val start = Math.min(selectionStart, selectionEnd)
+        val end = Math.max(selectionStart, selectionEnd)
+
+        return selectionController.lastTouchOffset in start..end
+    }
+
+    override fun performLongClick(): Boolean {
+        var handled = super.performLongClick()
+
+        if(!handled && !isPositionOnText(lastDownPositionX.toFloat(), lastDownPositionY.toFloat())) {
+            val offset = getOffset(lastDownPositionX, lastDownPositionY)
+            stopSelectionActionMode()
+            Selection.setSelection(text, offset)
+            handled = true
+        }
+
+        if(!handled && actionMode != null) {
+            if(touchPositionInSelection()) {
+                // start drag in original TextView, but we do nothing in this case.
+                // just keep action mode as is.
+            } else {
+                selectionController.hide()
+                selectCurrentWord()
+                selectionController.show()
+            }
+            handled = true
+        }
+
+        if(! handled) {
+            handled = startSelectionActionMode()
+        }
+
+        if(handled)
+        {
+            eatTouchRelease = true
+        }
+        return handled
+    }
+
+    fun selectCurrentWord() = movement.selectWord(text, selectionController.lastTouchOffset)
+
+    inner class SelectionActionModeCallback : ActionMode.Callback {
+
+        override fun onCreateActionMode(mode: ActionMode, menu: Menu): Boolean {
+            mode.setTitle("Selecting...")
+            mode.subtitle = null
+            mode.titleOptionalHint = true
+
+            menu.add(0, R.id.ID_COPY, 0, R.string.copy).setAlphabeticShortcut('c').setShowAsAction(
+                    MenuItem.SHOW_AS_ACTION_ALWAYS or MenuItem.SHOW_AS_ACTION_WITH_TEXT)
+            menu.add(0, R.id.ID_SEARCH, 0, R.string.search).setAlphabeticShortcut('s').setShowAsAction(
+                    MenuItem.SHOW_AS_ACTION_ALWAYS or MenuItem.SHOW_AS_ACTION_WITH_TEXT
+            )
+            menu.add(0, R.id.ID_GSEARCH, 0, R.string.gsearch).setAlphabeticShortcut('g').setShowAsAction(
+                    MenuItem.SHOW_AS_ACTION_ALWAYS or MenuItem.SHOW_AS_ACTION_WITH_TEXT
+            )
+
+            if (menu.hasVisibleItems()) {
+                selectionController.show()
+                // mTextView.setHasTransientState(true)
+                return true
+            } else {
+                return false
+            }
+        }
+
+        override fun onPrepareActionMode(mode: ActionMode, menu: Menu) = true
+
+        override fun onActionItemClicked(mode: ActionMode, item: MenuItem) = onTextContextMenuItem(item.itemId)
+
+        override fun onDestroyActionMode(mode: ActionMode) {
+            Selection.setSelection(text, selectionEnd)
+            selectionController.hide()
+
+            actionMode = null
+        }
+    }
+
+    private fun onTextContextMenuItem(itemId: Int): Boolean {
+        when(itemId) {
+            R.id.ID_COPY ->{
+                copySelection()
+                return true
+            }
+            R.id.ID_SEARCH-> {
+
+            }
+            R.id.ID_GSEARCH-> {
+
+            }
+        }
+        return false
+    }
+
+    fun startSelectionActionMode(): Boolean {
+        if(actionMode != null) {
+            // already there
+            return false
+        }
+
+        if(!requestFocus()) {
+            // not support text selection. Is this occur in our case?
+            return false
+        }
+
+        if(!hasSelection) {
+            if(!selectCurrentWord()) {
+                return false
+            }
+        }
+        actionMode = startActionMode(SelectionActionModeCallback())
+        return actionMode != null
+    }
+
+    val hasSelection
+    get() = selectionStart >=0 && selectionStart != selectionEnd
+
+    fun stopSelectionActionMode() {
+        actionMode?.let {
+            actionMode!!.finish()
+        }
+    }
+
+    /*
+    override fun onCreateContextMenu(menu: ContextMenu) {
+        super.onCreateContextMenu(menu)
+
+        val selected = selectionStart != selectionEnd
+
+        if(!selected) {
+
+        }
+
+
+        if(selected) {
+            menu.add(0, R.id.ID_CANCEL_SELECTION, 0, R.string.cancel_select)
+                    .setOnMenuItemClickListener{ cancelSelection(); true }
+            menu.add(0, R.id.ID_COPY, 0, R.string.copy)
+                    .setOnMenuItemClickListener { copySelection(); true }
+            menu.add(0, R.id.ID_SEARCH, 0, R.string.search)
+            menu.add(0, R.id.ID_GSEARCH, 0, R.string.gsearch)
+        } else {
+            menu.add(0, R.id.ID_START_SELECTION, 0, R.string.start_select)
+        }
+
+        // hideControloers()
+
+
+
+    }
+    */
+
+    val clipManager by lazy {
+        context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+    }
+
+    private fun copySelection(){
+        clipManager.setText(selectedText)
+        stopSelectionActionMode()
+    }
+
+    private val selectedText: CharSequence
+    get() {
+        val minsel = Math.max(0, Math.min(selectionStart, selectionEnd))
+        val maxsel = Math.max(0, Math.max(selectionStart, selectionEnd))
+        val selected = text.subSequence(minsel, maxsel)
+        return selected
+    }
 
     var text = SpannableString("Loading...")
     set(newText) {
@@ -145,7 +337,7 @@ class LongTextView(context: Context, attrs: AttributeSet) : View(context, attrs)
         if (line == layout!!.lineCount - 1) r.bottom += paddingBottom
     }
 
-    private fun convertFromViewportToContentCoordinates(r: Rect) {
+    fun convertFromViewportToContentCoordinates(r: Rect) {
         val horizontalOffset = viewportToContentHorizontalOffset()
         r.left += horizontalOffset
         r.right += horizontalOffset
@@ -366,6 +558,7 @@ class LongTextView(context: Context, attrs: AttributeSet) : View(context, attrs)
     override fun onTouchEvent(event: MotionEvent): Boolean {
         val action = event.action
 
+        selectionController.onTouchEvent(event)
 
         if(action == MotionEvent.ACTION_DOWN) {
             // Reset this state; it will be re-set if super.onTouchEvent
@@ -425,11 +618,11 @@ class LongTextView(context: Context, attrs: AttributeSet) : View(context, attrs)
                 Selection.setSelection(text, prevStart, prevEnd)
 
                 // Tapping inside the selection displays the cut/copy/paste context menu
-                startTextSelectionMode()
-                // getSelectionController().show()
+                startSelectionActionMode()
+                selectionController.show()
             } else {
                 // Tapping outside stops selection mode, if any
-                stopTextSelectionMode()
+                stopSelectionActionMode()
 
                 /*
                 val selectAllGotFocus = selectAllOnFocus && touchFocusSelected
@@ -552,8 +745,8 @@ class LongTextView(context: Context, attrs: AttributeSet) : View(context, attrs)
          */
         /*
         if (mMovement != null ||
-                mLayout.getWidth() > unpaddedWidth ||
-                mLayout.getHeight() > unpaddedHeight) {
+                layout.getWidth() > unpaddedWidth ||
+                layout.getHeight() > unpaddedHeight) {
                 */
         if(layout!!.width > unpaddedWidth ||
                 layout!!.height > unpaddedHeight) {
@@ -590,6 +783,16 @@ class LongTextView(context: Context, attrs: AttributeSet) : View(context, attrs)
 
         layout!!.draw(canvas, voffsetCursor-voffsetText, selLine, lineNumberWidth, lineNumberPaint, spacePaths)
 
+    }
+
+
+    val selectionController by lazy {
+        val cont = SelectionController(this)
+        val observer = viewTreeObserver
+        observer?.let {
+            observer.addOnTouchModeChangeListener(cont)
+        }
+        cont
     }
 
     private val ideographicalSpacePath = Path()
@@ -656,7 +859,7 @@ class LongTextView(context: Context, attrs: AttributeSet) : View(context, attrs)
 
         if (newEnd != end) {
             Selection.setSelection(text, newEnd)
-            stopTextSelectionMode()
+            stopSelectionActionMode()
             return true
         }
 
@@ -664,8 +867,7 @@ class LongTextView(context: Context, attrs: AttributeSet) : View(context, attrs)
 
     }
 
-    fun startTextSelectionMode() {}
-    fun stopTextSelectionMode() {}
+
 
     fun moveToLine(line : Int) {
         val offset = layout!!.getLineStart(line)
@@ -673,6 +875,76 @@ class LongTextView(context: Context, attrs: AttributeSet) : View(context, attrs)
 
         registerForPreDraw()
         invalidate()
+    }
+
+
+    /**
+     * Get the offset character closest to the specified absolute position.
+     *
+     * @param x The horizontal absolute position of a point on screen
+     * @param y The vertical absolute position of a point on screen
+     * @return the character offset for the character whose position is closest to the specified
+     * position. Returns -1 if there is no layout.
+     *
+     * @hide
+     */
+    fun getOffset(x: Int, y: Int): Int {
+        if (layout == null) return -1
+
+        val line = getLineFromViewportY(y)
+        return getOffsetForHorizontal(line, x)
+    }
+
+    private fun getLineFromViewportY(y: Int): Int {
+        var y = y
+
+        y -= paddingTop
+        // Clamp the position to inside of the view.
+        y = Math.max(0, y)
+        y = Math.min(height - paddingBottom - 1, y)
+        y += scrollY
+
+        return layout!!.getLineForVertical(y)
+    }
+
+
+    private fun getOffsetForHorizontal(line: Int, x: Int): Int {
+        var x = x
+        x -= paddingLeft
+
+        // Clamp the position to inside of the view.
+        x = Math.max(0, x)
+        x = Math.min(width - paddingRight - 1, x)
+        x += scrollX
+
+        return layout!!.getOffsetForHorizontal(line, x.toFloat())
+    }
+
+    fun getHysteresisOffset(x: Int, y: Int, previousOffset: Int): Int {
+        var y = y
+        val layout = layout ?: return -1
+
+        y -= paddingTop
+
+        // Clamp the position to inside of the view.
+        y = Math.max(0, y)
+        y = Math.min(height - paddingBottom - 1, y)
+        y += scrollY
+
+        var line = layout!!.getLineForVertical(y)
+
+        val previousLine = layout!!.getLineForOffset(previousOffset)
+        val previousLineTop = layout!!.getLineTop(previousLine)
+        val previousLineBottom = layout!!.getLineBottom(previousLine)
+        val hysteresisThreshold = (previousLineBottom - previousLineTop) / 8
+
+        // If new line is just before or after previous line and y position is less than
+        // hysteresisThreshold away from previous line, keep cursor on previous line.
+        if (line == previousLine + 1 && y - previousLineBottom < hysteresisThreshold || line == previousLine - 1 && previousLineTop - y < hysteresisThreshold) {
+            line = previousLine
+        }
+
+        return getOffsetForHorizontal(line, x)
     }
 
 

@@ -731,7 +731,7 @@ class Layout(val text: SpannableString, val textPaint: TextPaint, var width: Int
         if (alt)
             trailing = !trailing
 
-        var there = here + 1
+        var there = here + DIRECTION_ZERO
         if (there > end - start)
             there = end - start
 
@@ -1213,8 +1213,11 @@ class Layout(val text: SpannableString, val textPaint: TextPaint, var width: Int
         return offset
     }
 
+
+    val DIRECTION_ZERO = 32767
+
     /**
-     * Get the character offset on the specfied line whose position is
+     * Get the character offset on the specified line whose position is
      * closest to the specified horizontal position.
      */
     fun getOffsetForHorizontal(line: Int, horiz: Float): Int {
@@ -1228,7 +1231,7 @@ class Layout(val text: SpannableString, val textPaint: TextPaint, var width: Int
 
         var here = min
 
-        var there = here + 1
+        var there = here + DIRECTION_ZERO
         val swap = 1
 
         if (there > max)

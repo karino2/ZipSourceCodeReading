@@ -616,9 +616,7 @@ class MovementMethod {
                         Selection.extendSelection(buffer, off)
                     }
                 } else if (doubletap) {
-                    Selection.setSelection(buffer,
-                            findWordStart(buffer, off),
-                            findWordEnd(buffer, off))
+                    selectWord(buffer, off)
                 } else {
                     Selection.setSelection(buffer, off)
                 }
@@ -631,6 +629,14 @@ class MovementMethod {
         }
 
         return handled
+    }
+
+    fun selectWord(buffer: Spannable, off: Int) : Boolean {
+        val start = findWordStart(buffer, off)
+        val end = findWordEnd(buffer, off)
+        if(start == end) return false
+        Selection.setSelection(buffer, start, end)
+        return true
     }
 
 

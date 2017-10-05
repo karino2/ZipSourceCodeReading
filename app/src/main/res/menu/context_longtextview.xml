@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item android:id="@+id/ID_CANCEL_SELECTION" android:title="@string/cancel_select" />
+    <item android:id="@+id/ID_START_SELECTION" android:title="@string/start_select" />
+    <item android:id="@+id/ID_COPY" android:title="@string/copy" />
+    <item android:id="@+id/ID_SEARCH" android:title="@string/search" />
+    <item android:id="@+id/ID_GSEARCH" android:title="@string/gsearch" />
+
+
+</menu>
