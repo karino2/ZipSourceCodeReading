@@ -123,7 +123,7 @@ class SelectionController(val parent: LongTextView) : ViewTreeObserver.OnTouchMo
         //            if (isTextEditable()) {
         when (event.action and MotionEvent.ACTION_MASK) {
             MotionEvent.ACTION_DOWN -> {
-                val x = event.x.toInt()
+                val x = event.x.toInt() - parent.lineNumberWidth
                 val y = event.y.toInt()
 
                 // Remember finger down position, to be able to start selection from there
