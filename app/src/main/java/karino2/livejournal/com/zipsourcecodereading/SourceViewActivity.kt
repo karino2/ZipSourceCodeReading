@@ -43,6 +43,17 @@ class SourceViewActivity : AppCompatActivity() {
         }
         sourceTextView.requestFocus()
 
+        sourceTextView.onSearch = {sword ->
+            showSearchBar()
+            searchField.setText(sword)
+            searchNext()
+        }
+        sourceTextView.onGSearch = {gword ->
+            val intent = Intent(this, SearchActivity::class.java)
+            intent.putExtra("SEARCH_WORD", gword)
+            startActivity(intent)
+        }
+
     }
 
     val handler by lazy {
@@ -89,47 +100,46 @@ class SourceViewActivity : AppCompatActivity() {
     }
 
     private fun searchPrevious() {
-        /*
         val text = sourceTextView.text
         val search = searchField.text.toString()
         if (search.length == 0) {
             return
         }
-        val selection = sourceTextView.getSelectionStart() - 1
+        val selection = sourceTextView.selectionStart - 1
         var previous = text.lastIndexOf(search, selection)
         if (previous > -1) {
-            Selection.setSelection(sourceTextView.getText() as Spannable,
+            Selection.setSelection(sourceTextView.text as Spannable,
                     previous,
                     previous + search.length)
             if (!sourceTextView.isFocused()) {
                 sourceTextView.requestFocus()
             }
+            // sourceTextView.moveCursorToVisibleOffset()
         } else { // wrap
             previous = text.lastIndexOf(search)
             if (previous > -1) {
-                Selection.setSelection(sourceTextView.getText() as Spannable,
+                Selection.setSelection(sourceTextView.text as Spannable,
                         previous,
                         previous + search.length)
                 if (!sourceTextView.isFocused()) {
                     sourceTextView.requestFocus()
                 }
+                // sourceTextView.moveCursorToVisibleOffset()
             }
         }
-        */
     }
 
 
     private fun searchNext() {
-        /*
-        val text = sourceTextView.getText().toString()
+        val text = sourceTextView.text.toString()
         val search = searchField.text.toString()
         if (search.length == 0) {
             return
         }
-        val selection = sourceTextView.getSelectionEnd()
+        val selection = sourceTextView.selectionEnd
         var next = text.indexOf(search, selection)
         if (next > -1) {
-            Selection.setSelection(sourceTextView.getText() as Spannable,
+            Selection.setSelection(sourceTextView.text as Spannable,
                     next,
                     next + search.length)
             if (!sourceTextView.isFocused()) {
@@ -138,7 +148,7 @@ class SourceViewActivity : AppCompatActivity() {
         } else { // wrap
             next = text.indexOf(search)
             if (next > -1) {
-                Selection.setSelection(sourceTextView.getText() as Spannable,
+                Selection.setSelection(sourceTextView.text as Spannable,
                         next,
                         next + search.length)
                 if (!sourceTextView.isFocused()) {
@@ -146,7 +156,6 @@ class SourceViewActivity : AppCompatActivity() {
                 }
             }
         }
-        */
 
     }
 

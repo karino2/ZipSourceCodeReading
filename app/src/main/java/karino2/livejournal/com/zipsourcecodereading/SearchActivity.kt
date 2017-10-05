@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
+import android.os.Handler
 import android.support.v7.widget.DividerItemDecoration
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
@@ -79,6 +80,10 @@ class SearchActivity : AppCompatActivity() {
 
     }
 
+    val searchEntryField by lazy {
+        findViewById(R.id.searchEntryField) as EditText
+    }
+
     fun startSearch() {
         prevSearch?.dispose()
         prevSearch = null
@@ -89,7 +94,7 @@ class SearchActivity : AppCompatActivity() {
 
 
         val fpat = (findViewById(R.id.fileEntryField) as EditText).text.toString()
-        val spat =  (findViewById(R.id.searchEntryField) as EditText).text.toString()
+        val spat =  searchEntryField.text.toString()
 
         val ffilter = fun(path : String) : Boolean {
             if(fpat == "")
@@ -162,7 +167,17 @@ class SearchActivity : AppCompatActivity() {
             return false;
         })
 
+        intent?.let {
+            val word = intent.getStringExtra("SEARCH_WORD")
+            word?.let {
+                searchEntryField.setText(word)
+                handler.post { startSearch() }
+            }
+        }
+
     }
+
+    val handler by lazy { Handler() }
 
     fun hideSoftkey() {
         val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager

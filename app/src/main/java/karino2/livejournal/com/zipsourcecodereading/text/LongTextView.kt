@@ -8,6 +8,7 @@ import android.text.style.UpdateAppearance
 import android.util.AttributeSet
 import android.util.TypedValue
 import android.view.*
+import io.reactivex.functions.Action
 import karino2.livejournal.com.zipsourcecodereading.R
 
 
@@ -111,10 +112,14 @@ class LongTextView(context: Context, attrs: AttributeSet) : View(context, attrs)
 
             menu.add(0, R.id.ID_COPY, 0, R.string.copy).setAlphabeticShortcut('c').setShowAsAction(
                     MenuItem.SHOW_AS_ACTION_ALWAYS or MenuItem.SHOW_AS_ACTION_WITH_TEXT)
-            menu.add(0, R.id.ID_SEARCH, 0, R.string.search).setAlphabeticShortcut('s').setShowAsAction(
+            menu.add(0, R.id.ID_SEARCH, 0, R.string.search)
+                    .setIcon(android.R.drawable.ic_menu_search)
+                    .setAlphabeticShortcut('s').setShowAsAction(
                     MenuItem.SHOW_AS_ACTION_ALWAYS or MenuItem.SHOW_AS_ACTION_WITH_TEXT
             )
-            menu.add(0, R.id.ID_GSEARCH, 0, R.string.gsearch).setAlphabeticShortcut('g').setShowAsAction(
+            menu.add(0, R.id.ID_GSEARCH, 0, R.string.gsearch)
+                    .setIcon(R.drawable.gsearch)
+                    .setAlphabeticShortcut('g').setShowAsAction(
                     MenuItem.SHOW_AS_ACTION_ALWAYS or MenuItem.SHOW_AS_ACTION_WITH_TEXT
             )
 
@@ -139,6 +144,9 @@ class LongTextView(context: Context, attrs: AttributeSet) : View(context, attrs)
         }
     }
 
+    var onSearch : (String)->Unit = {}
+    var onGSearch : (String)->Unit = {}
+
     private fun onTextContextMenuItem(itemId: Int): Boolean {
         when(itemId) {
             R.id.ID_COPY ->{
@@ -146,10 +154,14 @@ class LongTextView(context: Context, attrs: AttributeSet) : View(context, attrs)
                 return true
             }
             R.id.ID_SEARCH-> {
-
+                onSearch(selectedText.toString())
+                stopSelectionActionMode()
+                return true
             }
             R.id.ID_GSEARCH-> {
-
+                onGSearch(selectedText.toString())
+                stopSelectionActionMode()
+                return true
             }
         }
         return false

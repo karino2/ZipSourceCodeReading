@@ -516,7 +516,7 @@ class MovementMethod {
                     // Update selection as we're moving the selection area.
 
                     // Get the current touch position
-                    val x = event.x.toInt() - lineNumberWidth    // Jota Text Editor
+                    val x = event.x.toInt() - lineNumberWidth
                     val y = event.y.toInt()
                     val offset = getOffset(x, y, widget)
 
@@ -561,7 +561,7 @@ class MovementMethod {
                     return true
                 }
 
-                val x = event.x.toInt() - lineNumberWidth    // Jota Text Editor
+                val x = event.x.toInt() - lineNumberWidth
                 val y = event.y.toInt()
                 val off = getOffset(x, y, widget)
 

@@ -447,7 +447,7 @@ class Layout(val text: SpannableString, val textPaint: TextPaint, var width: Int
 
                     if (c == '\n')
                     {
-                        if (!tab) tab = showTab      // Jota Text Editor
+                        if (!tab) tab = showTab
                     }
                     else if (c == '\t')
                     {

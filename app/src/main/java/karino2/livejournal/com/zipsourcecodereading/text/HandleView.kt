@@ -187,7 +187,7 @@ abstract class HandleView(val parent: LongTextView,  pos: HandleSide) : View(par
             MotionEvent.ACTION_MOVE -> {
                 val rawX = ev.rawX
                 val rawY = ev.rawY
-                val newPosX = rawX - touchToWindowOffsetX + hotspotX - parent.lineNumberWidth            // Jota Text Editor
+                val newPosX = rawX - touchToWindowOffsetX + hotspotX - parent.lineNumberWidth
                 val newPosY = rawY - touchToWindowOffsetY + hotspotY + touchOffsetY
 
                 updatePosition(this, Math.round(newPosX+offsetX), Math.round(newPosY))
