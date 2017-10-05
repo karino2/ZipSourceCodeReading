@@ -41,6 +41,7 @@ class SourceViewActivity : AppCompatActivity() {
             val lineNum = intent.getIntExtra("LINE_NUM", 0)
             openFile(zipEntryName, lineNum)
         }
+        sourceTextView.requestFocus()
 
     }
 
