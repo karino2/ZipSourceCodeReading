@@ -3,8 +3,9 @@ package karino2.livejournal.com.zipsourcecodereading.text
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Rect
-import android.view.MotionEvent
-import android.view.View
+import android.text.TextPaint
+import android.util.Log
+import android.view.*
 import android.widget.PopupWindow
 
 
@@ -124,7 +125,7 @@ abstract class HandleView(val parent: LongTextView,  pos: HandleSide) : View(par
         parent.getLocationInWindow(coords)
         coords[0] += positionX
         coords[1] += positionY
-        container.showAtLocation(parent, 0, coords[0], coords[1])
+        container.showAtLocation(parent, Gravity.NO_GRAVITY, coords[0], coords[1])
     }
 
     fun hide() {
@@ -164,7 +165,8 @@ abstract class HandleView(val parent: LongTextView,  pos: HandleSide) : View(par
     }
 
     override fun onDraw(c: Canvas) {
-        drawable!!.setBounds(0, 0, parent.right - parent.left, parent.bottom - parent.top)
+        // drawable!!.setBounds(0, 0, parent.right - parent.left, parent.bottom - parent.top)
+        drawable!!.setBounds(0, 0, drawable!!.intrinsicWidth, drawable!!.intrinsicHeight)
         drawable!!.draw(c)
     }
 
@@ -188,7 +190,7 @@ abstract class HandleView(val parent: LongTextView,  pos: HandleSide) : View(par
                 val newPosX = rawX - touchToWindowOffsetX + hotspotX - parent.lineNumberWidth            // Jota Text Editor
                 val newPosY = rawY - touchToWindowOffsetY + hotspotY + touchOffsetY
 
-                updatePosition(this, Math.round(newPosX), Math.round(newPosY))
+                updatePosition(this, Math.round(newPosX+offsetX), Math.round(newPosY))
             }
 
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> isDragging = false
@@ -217,6 +219,7 @@ abstract class HandleView(val parent: LongTextView,  pos: HandleSide) : View(par
         bounds.bottom = bounds.top + height
 
         parent.convertFromViewportToContentCoordinates(bounds)
-        moveTo(bounds.left, bounds.top)
+        moveTo(bounds.left+offsetX, bounds.top)
     }
+    val offsetX = -20
 }
