@@ -99,7 +99,7 @@ class MovementMethod {
                     0, Integer.MAX_VALUE, 0, Integer.MAX_VALUE)
             mTouchMode = TOUCH_MODE_FLING
 
-            mWidget!!.post(this)
+            mWidget!!.postOnAnimation(this)
 
         }
 
@@ -142,7 +142,7 @@ class MovementMethod {
                     if (more && delta != 0) {
                         mWidget!!.invalidate()
                         mLastFlingY = y
-                        mWidget!!.post(this)
+                        mWidget!!.postOnAnimation(this)
                     } else {
                         endFling()
                     }
