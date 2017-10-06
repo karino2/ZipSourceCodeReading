@@ -2,12 +2,9 @@ package karino2.livejournal.com.zipsourcecodereading.text
 
 import android.graphics.Canvas
 import android.graphics.Paint
-import android.text.SpannableString
-import android.text.TextPaint
+import android.text.*
 import android.text.style.CharacterStyle
 import android.text.style.MetricAffectingSpan
-import android.text.Spanned
-import android.text.SpannedString
 import android.text.style.ReplacementSpan
 import android.text.Layout.DIR_LEFT_TO_RIGHT
 
@@ -21,14 +18,14 @@ import android.text.Layout.DIR_LEFT_TO_RIGHT
  */
 class Styled {
     companion object {
-        fun drawText(canvas: Canvas, text: SpannableString, start: Int, end: Int, x: Float, top: Int, y: Float, bottom: Int, textPaint: TextPaint, workPaint: TextPaint, needWidth: Boolean) : Float {
+        fun drawText(canvas: Canvas, text: Spannable, start: Int, end: Int, x: Float, top: Int, y: Float, bottom: Int, textPaint: TextPaint, workPaint: TextPaint, needWidth: Boolean) : Float {
             return drawDirectionalRun(canvas, text, start, end,
                     x, top, y, bottom, null, textPaint, workPaint,
                     needWidth)
         }
 
         private fun drawDirectionalRun(canvas: Canvas?,
-                                       text: SpannableString, start: Int, end: Int,
+                                       text: Spannable, start: Int, end: Int,
                                        x: Float, top: Int, y: Float, bottom: Int,
                                        fmi: Paint.FontMetricsInt?,
                                        paint: TextPaint,
@@ -196,7 +193,7 @@ class Styled {
          */
         fun measureText(paint: TextPaint,
                         workPaint: TextPaint,
-                        text: SpannableString, start: Int, end: Int,
+                        text: Spannable, start: Int, end: Int,
                         fmi: Paint.FontMetricsInt?): Float {
             return drawDirectionalRun(null, text, start, end,
                     0F, 0, 0F, 0, fmi, paint, workPaint, true)

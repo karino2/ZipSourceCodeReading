@@ -13,7 +13,6 @@ import java.util.zip.ZipFile
 import android.text.style.ForegroundColorSpan
 import android.view.inputmethod.EditorInfo
 import android.widget.*
-import io.reactivex.Completable
 import io.reactivex.Observable
 import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
@@ -302,11 +301,10 @@ class SourceViewActivity : AppCompatActivity() {
         }.subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe { content ->
-                    val tv = sourceTextView
 
                     val tooLarge = content.count() > 100*1024
 
-                    tv.text = SpannableString(content)
+                    sourceTextView.setString(content)
 
                     if(!tooLarge) {
                         startColoring(zipEntryName, content)
@@ -315,7 +313,7 @@ class SourceViewActivity : AppCompatActivity() {
                     }
 
                     handler.post {
-                        startTryScroll(tv, lineNum)
+                        startTryScroll(sourceTextView, lineNum)
                     }
                 }
     }

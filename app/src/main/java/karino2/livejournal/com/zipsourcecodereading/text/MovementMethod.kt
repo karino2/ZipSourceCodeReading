@@ -3,17 +3,14 @@ package karino2.livejournal.com.zipsourcecodereading.text
 import android.content.Context
 import android.text.Selection
 import android.text.Spannable
-import android.text.method.MetaKeyKeyListener.resetLockedMeta
 import android.text.method.MetaKeyKeyListener
 import android.view.ViewConfiguration
 import android.view.MotionEvent
 import android.view.VelocityTracker
 import android.text.NoCopySpan
 import android.widget.Scroller
-import android.widget.TextView
 
 import android.text.Layout.Alignment
-import android.text.SpannableString
 import java.lang.Character.UnicodeBlock
 
 /**
@@ -192,14 +189,40 @@ class MovementMethod {
     val LAST_TAP_DOWN = Object()
 
     fun getInitialScrollX(widget: LongTextView, buffer: Spannable): Int {
-        val ds = buffer.getSpans<DragState>(0, buffer.length, DragState::class.java)
+        val ds = dragStates
         return if (ds.size > 0) ds[0].mScrollX else -1
     }
 
     fun getInitialScrollY(widget: LongTextView, buffer: Spannable): Int {
-        val ds = buffer.getSpans<DragState>(0, buffer.length, DragState::class.java)
+        val ds = dragStates
         return if (ds.size > 0) ds[0].mScrollY else -1
     }
+
+    val customTagMap : MutableMap<Any, Triple<Int, Int, Any>> = mutableMapOf()
+    fun setCustomTag(what: Any, start: Int, end:Int) {
+        customTagMap.put(what, Triple(start, end, what))
+    }
+    fun getCustomTag(what: Any) : Triple<Int, Int, Any>?{
+        if(customTagMap.containsKey(what))
+            return customTagMap[what]
+        return null
+    }
+    fun getCustomTagStart(what: Any) : Int {
+        if(customTagMap.containsKey(what))
+            return customTagMap[what]!!.first
+        return -1
+    }
+
+
+    fun removeCustomTag(what: Any) {
+        customTagMap.remove(what)
+    }
+
+    private val dragStates : MutableList<DragState> = mutableListOf()
+    private val onePointFiveTapStates: MutableList<OnePointFiveTapState> = mutableListOf()
+    private val doubleTapStates: MutableList<DoubleTapState> = mutableListOf()
+
+
 
     /**
      * Handles touch events for dragging.  You may want to do other actions
@@ -207,9 +230,7 @@ class MovementMethod {
      */
     fun handleTouchEvent(widget: LongTextView, buffer: Spannable,
                          event: MotionEvent): Boolean {
-        val ds: Array<DragState>
-
-        ds = buffer.getSpans(0, buffer.length, DragState::class.java)
+        val ds = dragStates
 
         if (ds.size > 0) {
             if (ds[0].mVelocityTracker == null) {
@@ -226,6 +247,7 @@ class MovementMethod {
                         widget.cancelLongPress()
                     }
                 }
+                /*
                 for (i in ds.indices) {
                     buffer.removeSpan(ds[i])
                 }
@@ -233,6 +255,12 @@ class MovementMethod {
                 buffer.setSpan(DragState(event.x, event.y,
                         widget.scrollX, widget.scrollY),
                         0, 0, Spannable.SPAN_MARK_MARK)
+
+                */
+                dragStates.clear()
+                dragStates.add(DragState(event.x, event.y,
+                        widget.scrollX, widget.scrollY))
+
 
                 return true
             }
@@ -466,8 +494,7 @@ class MovementMethod {
                 val offset = getOffset(x, y, widget)
 
                 if (cap) {
-                    buffer.setSpan(LAST_TAP_DOWN, offset, offset,
-                            Spannable.SPAN_POINT_POINT)
+                    setCustomTag(LAST_TAP_DOWN, offset, offset)
 
                     // Disallow intercepting of the touch events, so that
                     // users can scroll and select at the same time.
@@ -475,8 +502,7 @@ class MovementMethod {
                     // mode once the view detected it needed to scroll.
                     widget.parent.requestDisallowInterceptTouchEvent(true)
                 } else {
-                    val tap = buffer.getSpans<OnePointFiveTapState>(0, buffer.length,
-                            OnePointFiveTapState::class.java)
+                    val tap = onePointFiveTapStates
 
                     if (tap.size > 0) {
                         if (event.eventTime - tap[0].mWhen <= ViewConfiguration.getDoubleTapTimeout() && sameWord(buffer, offset, Selection.getSelectionEnd(buffer))) {
@@ -484,8 +510,7 @@ class MovementMethod {
                             tap[0].active = true
                             // MetaKeyKeyListener.startSelecting(widget, buffer)
                             widget.parent.requestDisallowInterceptTouchEvent(true)
-                            buffer.setSpan(LAST_TAP_DOWN, offset, offset,
-                                    Spannable.SPAN_POINT_POINT)
+                            setCustomTag(LAST_TAP_DOWN, offset, offset)
                         }
 
                         tap[0].mWhen = event.eventTime
@@ -493,8 +518,7 @@ class MovementMethod {
                         val newtap = OnePointFiveTapState()
                         newtap.mWhen = event.eventTime
                         newtap.active = false
-                        buffer.setSpan(newtap, 0, buffer.length,
-                                Spannable.SPAN_INCLUSIVE_INCLUSIVE)
+                        onePointFiveTapStates.add(newtap)
                     }
                 }
             } else if (event.action == MotionEvent.ACTION_MOVE) {
@@ -520,13 +544,12 @@ class MovementMethod {
                     val y = event.y.toInt()
                     val offset = getOffset(x, y, widget)
 
-                    val tap = buffer.getSpans<OnePointFiveTapState>(0, buffer.length,
-                            OnePointFiveTapState::class.java)
+                    val tap = onePointFiveTapStates
 
                     if (tap.size > 0 && tap[0].active) {
                         // Get the last down touch position (the position at which the
                         // user started the selection)
-                        val lastDownOffset = buffer.getSpanStart(LAST_TAP_DOWN)
+                        val lastDownOffset = getCustomTagStart(LAST_TAP_DOWN)
 
                         // Compute the selection boundaries
                         val spanstart: Int
@@ -567,8 +590,7 @@ class MovementMethod {
 
                 // XXX should do the same adjust for x as we do for the line.
 
-                val onepointfivetap = buffer.getSpans<OnePointFiveTapState>(0, buffer.length,
-                        OnePointFiveTapState::class.java)
+                val onepointfivetap = onePointFiveTapStates
                 if (onepointfivetap.size > 0 && onepointfivetap[0].active &&
                         Selection.getSelectionStart(buffer) == Selection.getSelectionEnd(buffer)) {
                     // If we've set select mode, because there was a onepointfivetap,
@@ -576,10 +598,13 @@ class MovementMethod {
                     // and remove reference to the last onepointfivetap.
                     // MetaKeyKeyListener.stopSelecting(widget, buffer)
 
+                    /*
                     for (i in onepointfivetap.indices) {
                         buffer.removeSpan(onepointfivetap[i])
                     }
                     buffer.removeSpan(LAST_TAP_DOWN)
+                    */
+                    onePointFiveTapStates.clear()
                 }
 
                 val cap = false
@@ -588,8 +613,7 @@ class MovementMethod {
                         KeyEvent.META_SHIFT_ON) == 1 || JotaTextKeyListener.getMetaStateSelecting(buffer) !== 0
                         */
 
-                val tap = buffer.getSpans<DoubleTapState>(0, buffer.length,
-                        DoubleTapState::class.java)
+                val tap = doubleTapStates
                 var doubletap = false
 
                 if (tap.size > 0) {
@@ -602,12 +626,11 @@ class MovementMethod {
                 } else {
                     val newtap = DoubleTapState()
                     newtap.mWhen = event.eventTime
-                    buffer.setSpan(newtap, 0, buffer.length,
-                            Spannable.SPAN_INCLUSIVE_INCLUSIVE)
+                    doubleTapStates.add(newtap)
                 }
 
                 if (cap) {
-                    buffer.removeSpan(LAST_TAP_DOWN)
+                    removeCustomTag(LAST_TAP_DOWN)
                     if (onepointfivetap.size > 0 && onepointfivetap[0].active) {
                         // If we selecting something with the onepointfivetap-and
                         // swipe gesture, stop it on finger up.
@@ -621,7 +644,9 @@ class MovementMethod {
                     Selection.setSelection(buffer, off)
                 }
 
-                MetaKeyKeyListener.adjustMetaAfterKeypress(buffer)
+                // NOSpannableString does not support this
+                // MetaKeyKeyListener.adjustMetaAfterKeypress(buffer)
+
                 // resetLockedMeta(buffer.toLong())
 
                 return true

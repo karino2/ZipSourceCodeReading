@@ -304,16 +304,18 @@ class LongTextView(context: Context, attrs: AttributeSet) : View(context, attrs)
     val spanChangeWatcher = ChangeWatcher()
     val PRIORITY = 100
 
-    var text = SpannableString("Loading...")
-    set(newText) {
+    fun String.toNOSpannableString() : NOSpannableString {
+        val ret = NOSpannableString(this)
+        ret.spanWatcher = spanChangeWatcher
+        return ret
+    }
+
+    var text = "Loading...".toNOSpannableString()
+
+    fun setString(newText: String) : NOSpannableString {
         textPaint.textScaleX = 1F
 
-        field = newText
-
-
-
-        // val watches = text.getSpans(0, text.length, )
-        text.setSpan(spanChangeWatcher, 0, text.length, Spanned.SPAN_INCLUSIVE_INCLUSIVE or (PRIORITY shl Spanned.SPAN_PRIORITY_SHIFT))
+        text = newText.toNOSpannableString()
 
         movement.initialize(this, text)
 
@@ -324,8 +326,9 @@ class LongTextView(context: Context, attrs: AttributeSet) : View(context, attrs)
 
             invalidate()
         }
-
+        return text
     }
+
 
     val movement = MovementMethod()
 

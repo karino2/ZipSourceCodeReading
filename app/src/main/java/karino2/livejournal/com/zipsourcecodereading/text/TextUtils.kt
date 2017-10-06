@@ -1,8 +1,7 @@
 package karino2.livejournal.com.zipsourcecodereading.text
 
 import android.text.GetChars
-import android.text.SpannableString
-import android.text.Spanned
+import android.text.Spannable
 import android.text.style.ReplacementSpan
 
 
@@ -37,7 +36,7 @@ class TextUtils {
             }
         }
 
-        fun getOffsetAfter(text: SpannableString, offset: Int): Int {
+        fun getOffsetAfter(text: Spannable, offset: Int): Int {
             var offset = offset
             val len = text.length
 
@@ -73,7 +72,7 @@ class TextUtils {
             return offset
         }
 
-        fun indexOf(s: SpannableString, ch: Char, start: Int, end: Int): Int {
+        fun indexOf(s: Spannable, ch: Char, start: Int, end: Int): Int {
             var start = start
             val c = s.javaClass
 
@@ -85,7 +84,7 @@ class TextUtils {
                 if (segend > end)
                     segend = end
 
-                s.getChars(start, segend, temp, 0)
+                (s as GetChars).getChars(start, segend, temp, 0)
 
                 val count = segend - start
                 for (i in 0 until count) {

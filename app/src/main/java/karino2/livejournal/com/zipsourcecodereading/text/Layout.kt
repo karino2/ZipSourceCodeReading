@@ -4,8 +4,8 @@ import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.Rect
-import android.text.SpannableString
-import android.text.Spanned
+import android.text.GetChars
+import android.text.Spannable
 import android.text.TextPaint
 import android.text.style.AlignmentSpan
 import android.text.style.LeadingMarginSpan
@@ -17,13 +17,13 @@ import android.text.style.TabStopSpan
  * Created by _ on 2017/10/03.
  * ReadOnly, no emoji support, no rtl support.
  */
-class Layout(val text: SpannableString, val textPaint: TextPaint, var width: Int, val spacingmult: Float, val spacingadd: Float, val includepad: Boolean) {
+class Layout(val text: Spannable, val textPaint: TextPaint, var width: Int, val spacingmult: Float, val spacingadd: Float, val includepad: Boolean) {
     var mFontMetricsInt: Paint.FontMetricsInt? =  Paint.FontMetricsInt()
     private var mChs: CharArray? = null
     private var mWidths: FloatArray? = null
 
     companion object {
-        fun create(text: SpannableString, textPaint: TextPaint, width: Int, spacingmult: Float, spacingadd: Float, includepad: Boolean): Layout {
+        fun create(text: Spannable, textPaint: TextPaint, width: Int, spacingmult: Float, spacingadd: Float, includepad: Boolean): Layout {
             val ret = Layout(text, textPaint, width, spacingmult, spacingadd, includepad)
             ret.generate(text, 0, text.length, textPaint, width, spacingmult, spacingadd, includepad, includepad, false, false)
 
@@ -57,7 +57,7 @@ class Layout(val text: SpannableString, val textPaint: TextPaint, var width: Int
         if (off == 0 || (text as java.lang.CharSequence).charAt(off - 1) === '\n')
             par = true
 
-        val sp : Spanned = text
+        val sp = text
         val spans = sp.getSpans(getLineStart(line),
                 getLineEnd(line),
                 LeadingMarginSpan::class.java)
@@ -96,7 +96,7 @@ class Layout(val text: SpannableString, val textPaint: TextPaint, var width: Int
         if (off == 0 || (text as java.lang.CharSequence).charAt(off - 1) === '\n')
             par = true
 
-        val sp :Spanned = text
+        val sp = text
         val spans = sp.getSpans(getLineStart(line),
                 getLineEnd(line),
                 LeadingMarginSpan::class.java)
@@ -224,7 +224,7 @@ class Layout(val text: SpannableString, val textPaint: TextPaint, var width: Int
     fun getParagraphAlignment(line: Int): android.text.Layout.Alignment {
         var align = android.text.Layout.Alignment.ALIGN_NORMAL
 
-        val sp = text as Spanned
+        val sp = text
         val spans = sp.getSpans(getLineStart(line),
                 getLineEnd(line),
                 AlignmentSpan::class.java)
@@ -338,7 +338,7 @@ class Layout(val text: SpannableString, val textPaint: TextPaint, var width: Int
 
     }
 
-    fun generate(source:SpannableString, bufstart:Int, bufend:Int, paint:TextPaint, outerwidth:Int,
+    fun generate(source:Spannable, bufstart:Int, bufend:Int, paint:TextPaint, outerwidth:Int,
         spacingmult:Float, spacingadd:Float,
         includepad:Boolean, trackpad:Boolean,
         breakOnlyAtSpaces:Boolean, showTab:Boolean) {
@@ -390,7 +390,7 @@ class Layout(val text: SpannableString, val textPaint: TextPaint, var width: Int
                 mWidths = widths
             }
 
-            source.getChars(start, end, chs, 0)
+            (source as GetChars).getChars(start, end, chs, 0)
             val n = end - start
 
 
@@ -691,7 +691,7 @@ class Layout(val text: SpannableString, val textPaint: TextPaint, var width: Int
     var mBottomPadding = 0
 
 
-    private fun out(text: SpannableString, start: Int, end: Int,
+    private fun out(text: Spannable, start: Int, end: Int,
                     above: Int, below: Int, top: Int, bottom: Int, v: Int,
                     spacingmult: Float, spacingadd: Float,
                     fm: Paint.FontMetricsInt?, tab: Boolean,
@@ -769,7 +769,7 @@ class Layout(val text: SpannableString, val textPaint: TextPaint, var width: Int
 
     private fun measureText(paint: TextPaint,
                             workPaint: TextPaint,
-                            text: SpannableString,
+                            text: Spannable,
                             start: Int, offset: Int, end: Int,
                             trailing: Boolean, alt: Boolean,
                             hasTabs: Boolean): Float {
@@ -778,7 +778,7 @@ class Layout(val text: SpannableString, val textPaint: TextPaint, var width: Int
 
         if (hasTabs) {
             buf = TextUtils.obtain(end - start)
-            text.getChars(start, end, buf, 0)
+            (text as GetChars).getChars(start, end, buf, 0)
         }
 
         var h = 0f
@@ -871,7 +871,7 @@ class Layout(val text: SpannableString, val textPaint: TextPaint, var width: Int
      */
     fun measureText(paint: TextPaint,
                                    workPaint: TextPaint,
-                                   text: SpannableString,
+                                   text: Spannable,
                                    start: Int, end: Int,
                                    fm: Paint.FontMetricsInt?,
                                    hasTabs: Boolean): Float {
@@ -879,7 +879,7 @@ class Layout(val text: SpannableString, val textPaint: TextPaint, var width: Int
 
         if (hasTabs) {
             buf = TextUtils.obtain(end - start)
-            text.getChars(start, end, buf, 0)
+            (text as GetChars).getChars(start, end, buf, 0)
         }
 
         val len = end - start
@@ -1147,14 +1147,14 @@ class Layout(val text: SpannableString, val textPaint: TextPaint, var width: Int
 
     fun nextTab(h: Float) :Float =   ( ((h + TAB_INCREMENT).toInt() / TAB_INCREMENT) * TAB_INCREMENT).toFloat()
 
-    fun drawText(canvas: Canvas, text: SpannableString, start: Int, end: Int, x: Float, top: Int, y: Float, bottom: Int, textPaint: TextPaint, workPaint: TextPaint, hasTab: Boolean, spacePaint: Paint?, spacePaths: Array<Path>) {
+    fun drawText(canvas: Canvas, text: Spannable, start: Int, end: Int, x: Float, top: Int, y: Float, bottom: Int, textPaint: TextPaint, workPaint: TextPaint, hasTab: Boolean, spacePaint: Paint?, spacePaths: Array<Path>) {
         if(!hasTab) {
             Styled.drawText(canvas, text, start, end, x, top, y, bottom, textPaint, workPaint, false)
             return
         }
 
         val buf = TextUtils.obtain(end - start)
-        text.getChars(start, end, buf, 0)
+        (text as GetChars).getChars(start, end, buf, 0)
 
         var h = 0F
 
@@ -1278,8 +1278,8 @@ class Layout(val text: SpannableString, val textPaint: TextPaint, var width: Int
                 ReplacementSpan::class.java)
 
         for (i in spans.indices) {
-            val start = (text as Spanned).getSpanStart(spans[i])
-            val end = (text as Spanned).getSpanEnd(spans[i])
+            val start = text.getSpanStart(spans[i])
+            val end = text.getSpanEnd(spans[i])
 
             if (offset in (start + 1)..(end - 1))
                 offset = start
