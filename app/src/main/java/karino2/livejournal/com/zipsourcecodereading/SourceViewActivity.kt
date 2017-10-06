@@ -302,7 +302,7 @@ class SourceViewActivity : AppCompatActivity() {
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe { content ->
 
-                    val tooLarge = content.count() > 100*1024
+                    val tooLarge = content.count() > 500*1024
 
                     sourceTextView.setString(content)
 
