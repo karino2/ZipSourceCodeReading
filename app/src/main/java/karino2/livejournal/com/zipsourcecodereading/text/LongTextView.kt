@@ -960,7 +960,8 @@ class LongTextView(context: Context, attrs: AttributeSet) : View(context, attrs)
         var newEnd = end
         if (newEnd < leftChar) {
             newEnd = leftChar
-        } else if (newEnd > rightChar) {
+        } else if (newEnd > rightChar && rightChar != 0) {
+            // at end of file, rightChar becomes zero. I don't know the reason, anyway just ignore if rightChar == 0
             newEnd = rightChar
         }
 
