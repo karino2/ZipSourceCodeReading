@@ -34,6 +34,7 @@ class SourceViewActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_source_view)
+        sourceTextView.setString("Loading...")
 
         intent?.let {
             val zipEntryName = intent.getStringExtra("ZIP_FILE_ENTRY")
@@ -52,6 +53,7 @@ class SourceViewActivity : AppCompatActivity() {
             intent.putExtra("SEARCH_WORD", gword)
             startActivity(intent)
         }
+
 
     }
 
