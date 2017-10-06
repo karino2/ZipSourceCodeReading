@@ -132,7 +132,7 @@ class SourceViewActivity : AppCompatActivity() {
 
 
     private fun searchNext() {
-        val text = sourceTextView.text.toString()
+        val text = sourceTextView.text
         val search = searchField.text.toString()
         if (search.length == 0) {
             return
