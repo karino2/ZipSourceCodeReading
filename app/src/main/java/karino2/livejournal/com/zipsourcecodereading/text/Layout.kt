@@ -1205,7 +1205,7 @@ class Layout(val text: Spannable, val textPaint: TextPaint, var width: Int, val 
                         x + h,
                         top, y, bottom, textPaint, workPaint,
                         (start + j !== end) || hasTab)
-                if((j != there) and (buf[j] == '\t')) {
+                if((j != there) && (buf[j] == '\t')) {
                     spacePaint?.let {
                         canvas.translate(x+h, y)
                         canvas.drawPath(spacePaths[0], spacePaint)
