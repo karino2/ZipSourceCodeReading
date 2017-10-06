@@ -976,8 +976,16 @@ class LongTextView(context: Context, attrs: AttributeSet) : View(context, attrs)
 
 
 
-    fun moveToLine(line : Int) {
-        val offset = layout!!.getLineStart(line)
+    fun moveToLine(fline : Int) {
+        val vline = layout!!.fileLineToVLine(fline)
+
+        // centering on specified line.
+        val vspace = this.bottom - this.top - paddingTop - paddingBottom
+        val linePerScreen = vspace/layout!!.oneLineHeight
+
+        val targetLine = Math.max(0, Math.min(layout!!.lineCount-1, vline+linePerScreen/2))
+
+        val offset = layout!!.getLineStart(targetLine)
         Selection.setSelection(text, offset, offset)
 
         registerForPreDraw()

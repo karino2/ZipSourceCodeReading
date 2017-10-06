@@ -38,6 +38,7 @@ class Layout(val text: Spannable, val textPaint: TextPaint, var width: Int, val 
     var lineCount = 0
 
     var lines : IntArray = IntArray(ArrayUtils.idealIntArraySize(2))
+    var fileLines : IntArray = IntArray(ArrayUtils.idealIntArraySize(2))
 
     val START = 0
     val TAB = 0
@@ -338,11 +339,28 @@ class Layout(val text: Spannable, val textPaint: TextPaint, var width: Int, val 
 
     }
 
+    fun fileLineToVLine(fline: Int) : Int{
+        if(lineCount == 0)
+            return 0
+
+        val last = fileLines[lineCount-1]
+
+        if(fline > last)
+            return Math.max(0, lineCount)
+
+        var pos = fline
+        while(pos < lineCount && fileLines[pos] < fline) {
+            pos++
+        }
+        return pos
+    }
+
     fun generate(source:Spannable, bufstart:Int, bufend:Int, paint:TextPaint, outerwidth:Int,
         spacingmult:Float, spacingadd:Float,
         includepad:Boolean, trackpad:Boolean,
         breakOnlyAtSpaces:Boolean, showTab:Boolean) {
         lineCount = 0
+        var curFileLine = 0
 
         var v = 0
         val needMultiply = spacingmult != 1f || spacingadd != 0f
@@ -527,7 +545,7 @@ class Layout(val text: Spannable, val textPaint: TextPaint, var width: Int, val 
                                 ok++
                             }
 
-                            v = out(source,
+                            v = out(source, curFileLine,
                                 here, ok,
                                 okascent, okdescent, oktop, okbottom,
                                 v,
@@ -564,7 +582,7 @@ class Layout(val text: Spannable, val textPaint: TextPaint, var width: Int, val 
                                 ok++
                             }
 
-                            v = out(source,
+                            v = out(source, curFileLine,
                                 here, ok,
                                 okascent, okdescent, oktop, okbottom,
                                 v,
@@ -578,7 +596,7 @@ class Layout(val text: Spannable, val textPaint: TextPaint, var width: Int, val 
                         {
                      // Log.e("text", "output fit " + here + " to " +fit);
 
-                            v = out(source,
+                            v = out(source, curFileLine,
                                 here, fit,
                                 fitascent, fitdescent,
                                 fittop, fitbottom,
@@ -595,7 +613,7 @@ class Layout(val text: Spannable, val textPaint: TextPaint, var width: Int, val 
                             measureText(paint, workPaint,
                                 source, here, here + 1, fm, tab)
 
-                            v = out(source,
+                            v = out(source, curFileLine,
                                 here, here + 1,
                                 fm.ascent, fm.descent,
                                 fm.top, fm.bottom,
@@ -654,7 +672,7 @@ class Layout(val text: Spannable, val textPaint: TextPaint, var width: Int, val 
 
                  // Log.e("text", "output rest " + here + " to " + end);
 
-                v = out(source,
+                v = out(source, curFileLine,
                     here, end, fitascent, fitdescent,
                     fittop, fitbottom,
                     v,
@@ -668,6 +686,7 @@ class Layout(val text: Spannable, val textPaint: TextPaint, var width: Int, val 
             if (end == bufend)
                 break
             start = end
+            curFileLine++
         }
 
         if (bufend == bufstart || source[bufend - 1] == '\n')
@@ -677,6 +696,7 @@ class Layout(val text: Spannable, val textPaint: TextPaint, var width: Int, val 
             paint.getFontMetricsInt(fm)
 
             v = out(source,
+                    curFileLine,
                 bufend, bufend, fm.ascent, fm.descent,
                 fm.top, fm.bottom,
                 v,
@@ -691,7 +711,7 @@ class Layout(val text: Spannable, val textPaint: TextPaint, var width: Int, val 
     var mBottomPadding = 0
 
 
-    private fun out(text: Spannable, start: Int, end: Int,
+    private fun out(text: Spannable, curFileLine: Int,  start: Int, end: Int,
                     above: Int, below: Int, top: Int, bottom: Int, v: Int,
                     spacingmult: Float, spacingadd: Float,
                     fm: Paint.FontMetricsInt?, tab: Boolean,
@@ -714,7 +734,13 @@ class Layout(val text: Spannable, val textPaint: TextPaint, var width: Int, val 
             System.arraycopy(lines, 0, grow, 0, lines.size)
             this.lines = grow
             tmplines = grow
+
+            val growFileLine = IntArray(nlen)
+            System.arraycopy(fileLines, 0, growFileLine, 0, fileLines.size)
+            this.fileLines = growFileLine
         }
+
+        fileLines[off] = curFileLine
 
         if (j == 0) {
             if (trackpad) {
@@ -991,6 +1017,8 @@ class Layout(val text: Spannable, val textPaint: TextPaint, var width: Int, val 
     val height
     get() = getLineTop(lineCount)
 
+    val oneLineHeight
+    get() = _height
 
     fun getLineTop(line: Int) = _height * line
 
@@ -1077,6 +1105,7 @@ class Layout(val text: Spannable, val textPaint: TextPaint, var width: Int, val 
             }
         }
 
+        var lastDrawnLineNum = 0
 
         for(i in first..last) {
             val start = previousLineEnd
@@ -1097,11 +1126,16 @@ class Layout(val text: Spannable, val textPaint: TextPaint, var width: Int, val 
             val x = left
 
             if(lineNumberWidth != 0) {
-                val linenum = "      ${i+1}"
-                canvas.drawText(linenum, linenum.length-5, linenum.length, x.toFloat(), lbaseline.toFloat(), lineNumberPaint)
+                val fline = fileLines[i]
+                if(fline != lastDrawnLineNum) {
+                    lastDrawnLineNum = fline
+                    val linenum = "      ${fline}"
+                    canvas.drawText(linenum, linenum.length - 5, linenum.length, x.toFloat(), lbaseline.toFloat(), lineNumberPaint)
+                }
 
                 val linebottom = if(i < lineCount -1) { getLineTop(i+1) } else { getLineBottom(i) }
                 canvas.drawLine((lineNumberWidth-4).toFloat(), getLineTop(i).toFloat(), (lineNumberWidth-4).toFloat(), linebottom.toFloat(), lineNumberPaint);
+
                 canvas.translate(lineNumberWidth.toFloat(), 0F);
             }
 
