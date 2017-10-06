@@ -189,7 +189,7 @@ class NOSpannableString(val source : CharSequence) : CharSequence by source, Get
 
         var added = false
         var pos = startPos
-        while(end >= spans[pos].first) {
+        while(pos < spans.size && end >= spans[pos].first) {
             // for debug.
             val span = spans[pos]
             if(span.first != span.second &&
@@ -256,7 +256,7 @@ class NOSpannableString(val source : CharSequence) : CharSequence by source, Get
         val startPos = Math.max(0, spans.findInsertPos(start)-1)
         var pos = startPos
         var limit2 = limit
-        while(spans[pos].first < limit2) {
+        while(pos < spans.size && spans[pos].first < limit2) {
             if(spans[pos].first >start) {
                 if(kind == null || kind.isInstance(spans[pos].third)) {
                     limit2 =spans[pos].first
