@@ -16,6 +16,7 @@ import android.widget.EditText
 import android.widget.TextView
 import com.google.re2j.Parser
 import com.google.re2j.Pattern
+import com.google.re2j.PatternSyntaxException
 import com.google.re2j.RE2
 import io.reactivex.Observable
 import io.reactivex.Single
@@ -103,29 +104,33 @@ class SearchActivity : AppCompatActivity() {
         }
 
 
-        val reader = RegexpReader(Pattern.compile(spat))
+        try {
+            val reader = RegexpReader(Pattern.compile(spat))
 
-        // we should get regexp from pattern, but
-        val query = Query.fromRegexp(Parser.parse(spat, RE2.PERL))
+            // we should get regexp from pattern, but
+            val query = Query.fromRegexp(Parser.parse(spat, RE2.PERL))
 
-        val obs = Observable.defer{ Observable.fromIterable(index.postingQuery(query)) }
-                .map{ index.readName(it) }
-                .filter{  ffilter(it) }
-                .flatMap{ reader.Read(sourceArchive.getInputStream(ZipEntry(it)), it, 0) }
-                .subscribeOn(Schedulers.io())
-                .buffer(1, TimeUnit.SECONDS, 5)
+            val obs = Observable.defer { Observable.fromIterable(index.postingQuery(query)) }
+                    .map { index.readName(it) }
+                    .filter { ffilter(it) }
+                    .flatMap { reader.Read(sourceArchive.getInputStream(ZipEntry(it)), it, 0) }
+                    .subscribeOn(Schedulers.io())
+                    .buffer(1, TimeUnit.SECONDS, 5)
 
-        showSearchingIndicator()
+            showSearchingIndicator()
 
-        prevSearch = obs.observeOn(AndroidSchedulers.mainThread())
-                .doOnComplete {
-                    prevSearch=null
-                    hideSearchingIndicator()
-                }
-                .subscribe { matches ->
-                    if (matches.size > 0)
-                        searchAdapter.addAll(matches)
-                }
+            prevSearch = obs.observeOn(AndroidSchedulers.mainThread())
+                    .doOnComplete {
+                        prevSearch = null
+                        hideSearchingIndicator()
+                    }
+                    .subscribe { matches ->
+                        if (matches.size > 0)
+                            searchAdapter.addAll(matches)
+                    }
+        }catch(e: PatternSyntaxException) {
+            showMessage("Rexp compile fail: ${e.toString()}")
+        }
     }
 
 
