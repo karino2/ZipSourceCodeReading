@@ -279,6 +279,10 @@ abstract class MovementMethod(val widget : LongTextView) {
                         // createScrollingCache()
                         touchMode = TouchMode.SCROLL
                         flingRunnable.flywheelTouch()
+
+                        // should I update other thing too?
+                        dragState.x = event.x
+                        dragState.y = event.y
                     }
                     else -> {
                         touchMode = TouchMode.DOWN
@@ -295,8 +299,6 @@ abstract class MovementMethod(val widget : LongTextView) {
                 if(touchMode == TouchMode.DOWN) {
                     widget.removeCallbacks(checkForTap)
                 }
-
-                return true
             }
 
             MotionEvent.ACTION_UP -> {
@@ -318,13 +320,18 @@ abstract class MovementMethod(val widget : LongTextView) {
                         val initialVelocity = velocityTracker!!.getYVelocity().toInt()
 
                         if(Math.abs(initialVelocity) > minimumVelocity) {
-                            flingRunnable!!.start(-initialVelocity)
+                            flingRunnable.start(-initialVelocity)
+                        } else {
+                            touchMode = TouchMode.REST
+                            flingRunnable.endFling()
                         }
                     }
                     else -> {
                         touchMode = TouchMode.REST
                     }
                 }
+                widget.removeCallbacks(checkForLongPress)
+                recycleVelocityTracker()
 
             }
             MotionEvent.ACTION_MOVE ->
@@ -345,6 +352,13 @@ abstract class MovementMethod(val widget : LongTextView) {
 
         return true
 
+    }
+
+    private fun recycleVelocityTracker() {
+        velocityTracker?.let {
+            velocityTracker!!.recycle()
+            velocityTracker = null
+        }
     }
 
     private fun scrollByTouch(widget: LongTextView, event: MotionEvent) {
