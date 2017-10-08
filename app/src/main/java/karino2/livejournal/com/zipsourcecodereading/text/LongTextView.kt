@@ -317,7 +317,7 @@ class LongTextView(context: Context, attrs: AttributeSet) : View(context, attrs)
 
         text = newText.toNOSpannableString()
 
-        movement.initialize(this, text)
+        movement.initialize(text)
 
         layout?.let {
             // This view does not support wrap_content, so chnaging text does not cause relayout.
@@ -330,7 +330,12 @@ class LongTextView(context: Context, attrs: AttributeSet) : View(context, attrs)
     }
 
 
-    val movement = MovementMethod()
+    val movement = object: MovementMethod(this@LongTextView) {
+        override fun notifyScroll() {
+            if(selectionController.isShowing)
+                stopSelectionActionMode()
+        }
+    }
 
     var layout : Layout? = null
 
@@ -650,6 +655,7 @@ class LongTextView(context: Context, attrs: AttributeSet) : View(context, attrs)
 
         val superHandled = super.onTouchEvent(event)
 
+
         /*
           * Don't handle the release after a long press, because it will
           * move the selection away from whatever the menu action was
@@ -670,7 +676,7 @@ class LongTextView(context: Context, attrs: AttributeSet) : View(context, attrs)
             val oldScrollX = scrollX
             val oldScrollY = scrollY
 
-            handled = handled or movement.onTouchEvent(this, text, event)
+            handled = handled || movement.onTouchEvent(this, text, event)
 
             if (action == MotionEvent.ACTION_UP && isFocused && !scrolled) {
                 // Cannot be done by CommitSelectionReceiver, which might not always be called,

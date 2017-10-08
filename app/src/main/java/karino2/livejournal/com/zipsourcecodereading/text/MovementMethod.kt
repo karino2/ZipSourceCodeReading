@@ -1,9 +1,7 @@
 package karino2.livejournal.com.zipsourcecodereading.text
 
-import android.content.Context
 import android.text.Selection
 import android.text.Spannable
-import android.text.method.MetaKeyKeyListener
 import android.view.ViewConfiguration
 import android.view.MotionEvent
 import android.view.VelocityTracker
@@ -11,12 +9,13 @@ import android.text.NoCopySpan
 import android.widget.Scroller
 
 import android.text.Layout.Alignment
+import android.util.Log
 import java.lang.Character.UnicodeBlock
 
 /**
  * Created by _ on 2017/10/04.
  */
-class MovementMethod {
+abstract class MovementMethod(val widget : LongTextView) {
 
     companion object {
 
@@ -67,55 +66,58 @@ class MovementMethod {
 
     }
 
-    fun initialize(widget: LongTextView, text: Spannable) {
+    fun initialize(text: Spannable) {
         Selection.setSelection(text, 0)
     }
 
+    abstract fun notifyScroll()
 
+    var touchMode = TouchMode.REST
 
-    private class FlingRunnable internal constructor(context: Context) : Runnable {
+    enum class TouchMode {
+        REST, FLING, DOWN,
+        TAP, SCROLL,
+    }
 
-        internal var mTouchMode = TOUCH_MODE_REST
+    val flingRunnable by lazy { FlingRunnable() }
+
+    inner class FlingRunnable : Runnable {
 
         private val mScroller: Scroller
 
         private var mLastFlingY: Int = 0
 
-        private var mWidget: LongTextView? = null
-
         init {
-            mScroller = Scroller(context)
+            mScroller = Scroller(widget.context)
         }
 
-        internal fun start(parent: LongTextView, initialVelocity: Int) {
-            mWidget = parent
-            val initialX = parent.scrollX //initialVelocity < 0 ? Integer.MAX_VALUE : 0;
-            val initialY = parent.scrollY //initialVelocity < 0 ? Integer.MAX_VALUE : 0;
+        internal fun start(initialVelocity: Int) {
+            val initialX = widget.scrollX //initialVelocity < 0 ? Integer.MAX_VALUE : 0;
+            val initialY = widget.scrollY //initialVelocity < 0 ? Integer.MAX_VALUE : 0;
             mLastFlingY = initialY
             mScroller.fling(initialX, initialY, 0, initialVelocity,
                     0, Integer.MAX_VALUE, 0, Integer.MAX_VALUE)
-            mTouchMode = TOUCH_MODE_FLING
+            touchMode = TouchMode.FLING
+            notifyScroll()
 
-            mWidget!!.postOnAnimation(this)
+            widget.postOnAnimation(this)
 
         }
 
         fun endFling() {
-            mTouchMode = TOUCH_MODE_REST
+            touchMode = TouchMode.REST
+            widget.removeCallbacks(this)
+            widget.removeCallbacks(checkFlyWheel)
 
-            if (mWidget != null) {
-                mWidget!!.removeCallbacks(this)
-                mWidget!!.moveCursorToVisibleOffset()
-
-                mWidget = null
-            }
-
+            widget.moveCursorToVisibleOffset()
         }
 
         override fun run() {
-            when (mTouchMode) {
-
-                TOUCH_MODE_FLING -> {
+            when (touchMode) {
+                TouchMode.SCROLL, TouchMode.FLING -> {
+                    if(touchMode == TouchMode.SCROLL && mScroller.isFinished) {
+                        return
+                    }
 
                     val scroller = mScroller
                     val more = scroller.computeScrollOffset()
@@ -123,245 +125,279 @@ class MovementMethod {
                     val x = scroller.currX
                     var y = scroller.currY
 
+                    val delta2 = mLastFlingY - y
 
 
-                    val layout = mWidget!!.layout!!
+                    val layout = widget.layout!!
 
-                    val padding = mWidget!!.paddingTop + mWidget!!.paddingBottom
+                    val padding = widget.paddingTop + widget.paddingBottom
 
-                    y = Math.min(y, layout.height - (mWidget!!.height - padding))
+                    y = Math.min(y, layout.height - (widget.height - padding))
                     y = Math.max(y, 0)
-                    //                final boolean atEnd = trackMotionScroll(delta, delta);
 
-                    scrollTo(mWidget!!, layout, x, y)
+                    scrollTo(widget, layout, x, y)
                     val delta = mLastFlingY - y
 
-                    if (more && delta != 0) {
-                        mWidget!!.invalidate()
+                    // deleta becomes zero for round, so should not used as finish check.
+                    // keep this code as comment for document purpose.
+                    if (more /*  && delta != 0 */) {
+                        widget.invalidate()
                         mLastFlingY = y
-                        mWidget!!.postOnAnimation(this)
+                        widget.postOnAnimation(this)
                     } else {
                         endFling()
                     }
                 }
-                else -> return
+                else -> endFling()
             }
 
         }
 
-        companion object {
+        val FLYWHEEL_TIMEOUT = 40L; // milliseconds
 
-            internal val TOUCH_MODE_REST = -1
-            internal val TOUCH_MODE_FLING = 3
+        fun checkFlyWheelAgain() = widget.postDelayed(checkFlyWheel, FLYWHEEL_TIMEOUT)
+
+        val checkFlyWheel : Runnable = Runnable() {
+            val vt = velocityTracker ?: return@Runnable
+
+            vt.computeCurrentVelocity(1000, maximumVelocity.toFloat());
+            val yvel = -vt.yVelocity
+            if (Math.abs(yvel) >= minimumVelocity
+                /*
+                    && mScroller.isScrollingInDirection(0, yvel) */ ) {
+                // Keep the fling alive a little longer
+                checkFlyWheelAgain()
+            } else {
+                endFling();
+                touchMode = TouchMode.SCROLL;
+                notifyScroll()
+            }
+        }
+
+        fun flywheelTouch() {
+            widget.postDelayed(checkFlyWheel, FLYWHEEL_TIMEOUT)
+        }
+
+
+    }
+
+
+    var velocityTracker : VelocityTracker? = null
+
+    class DragState() {
+        var x = 0f
+        var y = 0f
+        var scrollX = 0
+        var scrollY = 0
+        var farEnough = false
+        var used = false
+
+        fun init(widget: LongTextView, event: MotionEvent) {
+            used = true
+            farEnough = false
+            x = event.x
+            y = event.y
+            scrollX = widget.scrollX
+            scrollY = widget.scrollY
+
         }
     }
 
-    private class DragState(var mX: Float, var mY: Float, var mScrollX: Int, var mScrollY: Int) : NoCopySpan {
-        var mFarEnough: Boolean = false
-        var mUsed: Boolean = false
-        var mVelocityTracker: VelocityTracker? = null
-        var mFlingRunnable: FlingRunnable? = null
+    val dragState = DragState()
 
-        init {
-            mVelocityTracker = null
-            mFlingRunnable = null
+    fun getInitialScrollX(buffer: Spannable): Int {
+        return if (dragState.used) dragState.scrollX else -1
+    }
+
+    fun getInitialScrollY(buffer: Spannable): Int {
+        return if (dragState.used) dragState.scrollY else -1
+    }
+
+
+    val configuration by lazy { ViewConfiguration.get(widget.context) }
+
+    val maximumVelocity by lazy { configuration.scaledMaximumFlingVelocity }
+    val minimumVelocity by lazy { configuration.scaledMinimumFlingVelocity }
+
+
+    inner class CheckForLongPress : Runnable {
+        override fun run() {
+            widget.performLongClick()
+            touchMode = TouchMode.REST
+        }
+
+    }
+
+    val checkForLongPress by lazy {
+        CheckForLongPress()
+    }
+
+    val longPressTimeout by lazy {
+        ViewConfiguration.getLongPressTimeout()
+    }
+
+    inner class CheckForTap : Runnable {
+        var x = 0f
+        var y = 0f
+
+        override fun run() {
+            if(touchMode == TouchMode.DOWN) {
+                touchMode = TouchMode.TAP
+
+                widget.postDelayed(checkForLongPress, longPressTimeout.toLong())
+
+            }
+        }
+
+    }
+
+    val checkForTap by lazy { CheckForTap() }
+
+    fun initOrResetVelocityTracker() {
+        if(velocityTracker == null) {
+            velocityTracker = VelocityTracker.obtain()
+        } else {
+            velocityTracker!!.clear()
         }
     }
-
-    /* We check for a onepointfive tap. This is similar to
-    *  doubletap gesture (where a finger goes down, up, down, up, in a short
-    *  time period), except in the onepointfive tap, a users finger only needs
-    *  to go down, up, down in a short time period. We detect this type of tap
-    *  to implement the onepointfivetap-and-swipe selection gesture.
-    *  This gesture allows users to select a segment of text without going
-    *  through the "select text" option in the context menu.
-    */
-    private class OnePointFiveTapState : NoCopySpan {
-        internal var mWhen: Long = 0
-        internal var active: Boolean = false
-    }
-
-    private class DoubleTapState : NoCopySpan {
-        var mWhen: Long = 0
-    }
-
-
-    val LAST_TAP_DOWN = Object()
-
-    fun getInitialScrollX(widget: LongTextView, buffer: Spannable): Int {
-        val ds = dragStates
-        return if (ds.size > 0) ds[0].mScrollX else -1
-    }
-
-    fun getInitialScrollY(widget: LongTextView, buffer: Spannable): Int {
-        val ds = dragStates
-        return if (ds.size > 0) ds[0].mScrollY else -1
-    }
-
-    val customTagMap : MutableMap<Any, Triple<Int, Int, Any>> = mutableMapOf()
-    fun setCustomTag(what: Any, start: Int, end:Int) {
-        customTagMap.put(what, Triple(start, end, what))
-    }
-    fun getCustomTag(what: Any) : Triple<Int, Int, Any>?{
-        if(customTagMap.containsKey(what))
-            return customTagMap[what]
-        return null
-    }
-    fun getCustomTagStart(what: Any) : Int {
-        if(customTagMap.containsKey(what))
-            return customTagMap[what]!!.first
-        return -1
-    }
-
-
-    fun removeCustomTag(what: Any) {
-        customTagMap.remove(what)
-    }
-
-    private val dragStates : MutableList<DragState> = mutableListOf()
-    private val onePointFiveTapStates: MutableList<OnePointFiveTapState> = mutableListOf()
-    private val doubleTapStates: MutableList<DoubleTapState> = mutableListOf()
-
-
 
     /**
      * Handles touch events for dragging.  You may want to do other actions
      * like moving the cursor on touch as well.
      */
-    fun handleTouchEvent(widget: LongTextView, buffer: Spannable,
+    fun handleTouchEvent(buffer: Spannable,
                          event: MotionEvent): Boolean {
-        val ds = dragStates
-
-        if (ds.size > 0) {
-            if (ds[0].mVelocityTracker == null) {
-                ds[0].mVelocityTracker = VelocityTracker.obtain()
-            }
-            ds[0].mVelocityTracker!!.addMovement(event)
-        }
 
         when (event.action) {
             MotionEvent.ACTION_DOWN -> {
-                if (ds.size > 0) {
-                    if (ds[0].mFlingRunnable != null) {
-                        ds[0].mFlingRunnable!!.endFling()
-                        widget.cancelLongPress()
+                initOrResetVelocityTracker()
+                // I think this code add twice, but AbsListView code is this way.
+                velocityTracker!!.addMovement(event)
+
+                when(touchMode) {
+                    TouchMode.FLING -> {
+                        // createScrollingCache()
+                        touchMode = TouchMode.SCROLL
+                        flingRunnable.flywheelTouch()
                     }
+                    else -> {
+                        touchMode = TouchMode.DOWN
+
+                        dragState.init(widget, event)
+
+                        checkForTap.x = event.getX()
+                        checkForTap.y = event.getY()
+                        widget.postDelayed(checkForTap, ViewConfiguration.getTapTimeout().toLong())
+                    }
+
                 }
-                /*
-                for (i in ds.indices) {
-                    buffer.removeSpan(ds[i])
+
+                if(touchMode == TouchMode.DOWN) {
+                    widget.removeCallbacks(checkForTap)
                 }
-
-                buffer.setSpan(DragState(event.x, event.y,
-                        widget.scrollX, widget.scrollY),
-                        0, 0, Spannable.SPAN_MARK_MARK)
-
-                */
-                dragStates.clear()
-                dragStates.add(DragState(event.x, event.y,
-                        widget.scrollX, widget.scrollY))
-
 
                 return true
             }
 
             MotionEvent.ACTION_UP -> {
                 var result = false
-                val cap = false
-                /*
-                val cap = MetaKeyKeyListener.getMetaState(buffer,
-                        KeyEvent.META_SHIFT_ON) == 1 || JotaTextKeyListener.getMetaStateSelecting(buffer) !== 0
-                        */
+                when(touchMode) {
+                    TouchMode.DOWN, TouchMode.TAP-> {
 
-                if (ds.size > 0 && ds[0].mUsed) {
-                    result = true
-                    if (!cap) {
-                        val velocityTracker = ds[0].mVelocityTracker
-                        val mMinimumVelocity = ViewConfiguration.get(widget.context).scaledMinimumFlingVelocity
-                        val mMaximumVelocity = ViewConfiguration.get(widget.context).scaledMaximumFlingVelocity
-                        velocityTracker!!.computeCurrentVelocity(1000, mMaximumVelocity.toFloat())
-                        val initialVelocity = velocityTracker.getYVelocity().toInt()
+                        if(touchMode == TouchMode.DOWN || touchMode == TouchMode.TAP) {
+                            widget.removeCallbacks(if(touchMode == TouchMode.DOWN) checkForTap else checkForLongPress)
 
-                        if (Math.abs(initialVelocity) > mMinimumVelocity) {
-                            if (ds[0].mFlingRunnable == null) {
-                                ds[0].mFlingRunnable = FlingRunnable(widget.context)
-                            }
-
-                            ds[0].mFlingRunnable!!.start(widget, -initialVelocity)
-                        } else {
+                            // invoke tap
                             widget.moveCursorToVisibleOffset()
+                            touchMode = TouchMode.REST
                         }
-                    } else {
-                        widget.moveCursorToVisibleOffset()
-                    }
-                } else {
-                    widget.moveCursorToVisibleOffset()
-                }
-
-                if (ds[0].mVelocityTracker != null) {
-                    ds[0].mVelocityTracker!!.recycle()
-                    ds[0].mVelocityTracker = null
-                }
-
-                return result
-            }
-            MotionEvent.ACTION_MOVE ->
-
-                if (ds.size > 0) {
-                    if (ds[0].mFarEnough === false) {
-                        val slop = ViewConfiguration.get(widget.context).scaledTouchSlop
-
-                        if (Math.abs(event.x - ds[0].mX) >= slop || Math.abs(event.y - ds[0].mY) >= slop) {
-                            ds[0].mFarEnough = true
-                        }
-                    }
-
-                    if (ds[0].mFarEnough) {
-                        ds[0].mUsed = true
-                        val cap = false
-                        /*
-                        val cap = MetaKeyKeyListener.getMetaState(buffer,
-                                KeyEvent.META_SHIFT_ON) == 1 || MetaKeyKeyListener.getMetaState(buffer,
-                                MetaKeyKeyListener.META_SELECTING) != 0
-                                */
-                        val dx: Float
-                        val dy: Float
-                        if (cap) {
-                            // if we're selecting, we want the scroll to go in
-                            // the direction of the drag
-                            dx = event.x - ds[0].mX
-                            dy = event.y - ds[0].mY
-                        } else {
-                            dx = ds[0].mX - event.x
-                            dy = ds[0].mY - event.y
-                        }
-                        ds[0].mX = event.x
-                        ds[0].mY = event.y
-
-                        val nx = widget.scrollX + dx.toInt()
-                        var ny = widget.scrollY + dy.toInt()
-
-                        val padding = widget.paddingTop + widget.paddingBottom
-                        val layout = widget.layout
-
-                        ny = Math.min(ny, layout!!.height - (widget.height - padding))
-                        ny = Math.max(ny, 0)
-
-                        val oldX = widget.scrollX
-                        val oldY = widget.scrollY
-
-                        scrollTo(widget, layout, nx, ny)
-
-                        // If we actually scrolled, then cancel the up action.
-                        if (oldX != widget.scrollX || oldY != widget.scrollY) {
-                            widget.cancelLongPress()
-                        }
-
                         return true
                     }
+                    TouchMode.SCROLL -> {
+                        velocityTracker!!.computeCurrentVelocity(1000, maximumVelocity.toFloat())
+                        val initialVelocity = velocityTracker!!.getYVelocity().toInt()
+
+                        if(Math.abs(initialVelocity) > minimumVelocity) {
+                            flingRunnable!!.start(-initialVelocity)
+                        }
+                    }
+                    else -> {
+                        touchMode = TouchMode.REST
+                    }
                 }
+
+            }
+            MotionEvent.ACTION_MOVE ->
+                when(touchMode) {
+                    TouchMode.DOWN, TouchMode.TAP -> {
+                        startScrollIfNeeded(widget, event)
+                    }
+                    TouchMode.SCROLL -> {
+                        scrollByTouch(widget, event)
+                    }
+                }
+
         }
 
+        velocityTracker?.let {
+            velocityTracker!!.addMovement(event)
+        }
+
+        return true
+
+    }
+
+    private fun scrollByTouch(widget: LongTextView, event: MotionEvent) {
+        val dx: Float = dragState.x - event.x
+        val dy: Float = dragState.y - event.y
+        dragState.x = event.x
+        dragState.y = event.y
+
+
+        val nx = widget.scrollX + dx.toInt()
+        var ny = widget.scrollY + dy.toInt()
+
+        val padding = widget.paddingTop + widget.paddingBottom
+        val layout = widget.layout
+
+        ny = Math.min(ny, layout!!.height - (widget.height - padding))
+        ny = Math.max(ny, 0)
+
+        val oldX = widget.scrollX
+        val oldY = widget.scrollY
+
+        scrollTo(widget, layout, nx, ny)
+
+        // If we actually scrolled, then cancel the up action.
+        if (oldX != widget.scrollX || oldY != widget.scrollY) {
+            widget.cancelLongPress()
+        }
+    }
+
+    fun startScrollIfNeeded(widget: LongTextView, event: MotionEvent) : Boolean {
+        val slop = ViewConfiguration.get(widget.context).scaledTouchSlop
+
+        if (Math.abs(event.x - dragState.x) >= slop || Math.abs(event.y - dragState.y) >= slop) {
+            touchMode = TouchMode.SCROLL
+            notifyScroll()
+
+            widget.removeCallbacks(checkForLongPress)
+
+            scrollByTouch(widget, event)
+            return true
+        }
+        return false
+
+    }
+
+    private fun checkFarEnough(widget: LongTextView, event: MotionEvent) :Boolean {
+        val slop = ViewConfiguration.get(widget.context).scaledTouchSlop
+
+        if (Math.abs(event.x - dragState.x) >= slop || Math.abs(event.y - dragState.y) >= slop) {
+            dragState.farEnough = true
+            dragState.used = true
+            return true
+        }
         return false
     }
 
@@ -405,7 +441,6 @@ class MovementMethod {
 
     }
 
-    // TODO: Unify with TextView.getWordForDictionary()
     private fun findWordStart(text: CharSequence, start: Int): Int {
         var start = start
         if (text.length <= start) {
@@ -476,184 +511,11 @@ class MovementMethod {
         var initialScrollX = -1
         var initialScrollY = -1
         if (event.action == MotionEvent.ACTION_UP) {
-            initialScrollX = getInitialScrollX(widget, buffer)
-            initialScrollY = getInitialScrollY(widget, buffer)
+            initialScrollX = getInitialScrollX(buffer)
+            initialScrollY = getInitialScrollY(buffer)
         }
 
-        val handled = handleTouchEvent(widget, buffer, event)
-
-        if (widget.isFocused && !widget.didTouchFocusSelect){
-            if (event.action == MotionEvent.ACTION_DOWN) {
-                val cap = false
-                /*
-                val cap = MetaKeyKeyListener.getMetaState(buffer,
-                        KeyEvent.META_SHIFT_ON) == 1 || JotaTextKeyListener.getMetaStateSelecting(buffer) !== 0
-                        */
-                val x = event.x.toInt() - lineNumberWidth
-                val y = event.y.toInt()
-                val offset = getOffset(x, y, widget)
-
-                if (cap) {
-                    setCustomTag(LAST_TAP_DOWN, offset, offset)
-
-                    // Disallow intercepting of the touch events, so that
-                    // users can scroll and select at the same time.
-                    // without this, users would get booted out of select
-                    // mode once the view detected it needed to scroll.
-                    widget.parent.requestDisallowInterceptTouchEvent(true)
-                } else {
-                    val tap = onePointFiveTapStates
-
-                    if (tap.size > 0) {
-                        if (event.eventTime - tap[0].mWhen <= ViewConfiguration.getDoubleTapTimeout() && sameWord(buffer, offset, Selection.getSelectionEnd(buffer))) {
-
-                            tap[0].active = true
-                            // MetaKeyKeyListener.startSelecting(widget, buffer)
-                            widget.parent.requestDisallowInterceptTouchEvent(true)
-                            setCustomTag(LAST_TAP_DOWN, offset, offset)
-                        }
-
-                        tap[0].mWhen = event.eventTime
-                    } else {
-                        val newtap = OnePointFiveTapState()
-                        newtap.mWhen = event.eventTime
-                        newtap.active = false
-                        onePointFiveTapStates.add(newtap)
-                    }
-                }
-            } else if (event.action == MotionEvent.ACTION_MOVE) {
-                val cap = false
-                /*
-                val cap = MetaKeyKeyListener.getMetaState(buffer,
-                        KeyEvent.META_SHIFT_ON) == 1 || JotaTextKeyListener.getMetaStateSelecting(buffer) !== 0
-                        */
-
-                if (cap && handled) {
-                    // Before selecting, make sure we've moved out of the "slop".
-                    // handled will be true, if we're in select mode AND we're
-                    // OUT of the slop
-
-                    // Turn long press off while we're selecting. User needs to
-                    // re-tap on the selection to enable longpress
-                    widget.cancelLongPress()
-
-                    // Update selection as we're moving the selection area.
-
-                    // Get the current touch position
-                    val x = event.x.toInt() - lineNumberWidth
-                    val y = event.y.toInt()
-                    val offset = getOffset(x, y, widget)
-
-                    val tap = onePointFiveTapStates
-
-                    if (tap.size > 0 && tap[0].active) {
-                        // Get the last down touch position (the position at which the
-                        // user started the selection)
-                        val lastDownOffset = getCustomTagStart(LAST_TAP_DOWN)
-
-                        // Compute the selection boundaries
-                        val spanstart: Int
-                        val spanend: Int
-                        if (offset >= lastDownOffset) {
-                            // Expand from word start of the original tap to new word
-                            // end, since we are selecting "forwards"
-                            spanstart = findWordStart(buffer, lastDownOffset)
-                            spanend = findWordEnd(buffer, offset)
-                        } else {
-                            // Expand to from new word start to word end of the original
-                            // tap since we are selecting "backwards".
-                            // The spanend will always need to be associated with the touch
-                            // up position, so that refining the selection with the
-                            // trackball will work as expected.
-                            spanstart = findWordEnd(buffer, lastDownOffset)
-                            spanend = findWordStart(buffer, offset)
-                        }
-                        Selection.setSelection(buffer, spanstart, spanend)
-                    } else {
-                        Selection.extendSelection(buffer, offset)
-                    }
-                    return true
-                }
-            } else if (event.action == MotionEvent.ACTION_UP) {
-                // If we have scrolled, then the up shouldn't move the cursor,
-                // but we do need to make sure the cursor is still visible at
-                // the current scroll offset to avoid the scroll jumping later
-                // to show it.
-                if (initialScrollY >= 0 && initialScrollY != widget.scrollY || initialScrollX >= 0 && initialScrollX != widget.scrollX) {
-                    //                    widget.moveCursorToVisibleOffset();
-                    return true
-                }
-
-                val x = event.x.toInt() - lineNumberWidth
-                val y = event.y.toInt()
-                val off = getOffset(x, y, widget)
-
-                // XXX should do the same adjust for x as we do for the line.
-
-                val onepointfivetap = onePointFiveTapStates
-                if (onepointfivetap.size > 0 && onepointfivetap[0].active &&
-                        Selection.getSelectionStart(buffer) == Selection.getSelectionEnd(buffer)) {
-                    // If we've set select mode, because there was a onepointfivetap,
-                    // but there was no ensuing swipe gesture, undo the select mode
-                    // and remove reference to the last onepointfivetap.
-                    // MetaKeyKeyListener.stopSelecting(widget, buffer)
-
-                    /*
-                    for (i in onepointfivetap.indices) {
-                        buffer.removeSpan(onepointfivetap[i])
-                    }
-                    buffer.removeSpan(LAST_TAP_DOWN)
-                    */
-                    onePointFiveTapStates.clear()
-                }
-
-                val cap = false
-                /*
-                val cap = MetaKeyKeyListener.getMetaState(buffer,
-                        KeyEvent.META_SHIFT_ON) == 1 || JotaTextKeyListener.getMetaStateSelecting(buffer) !== 0
-                        */
-
-                val tap = doubleTapStates
-                var doubletap = false
-
-                if (tap.size > 0) {
-                    if (event.eventTime - tap[0].mWhen <= ViewConfiguration.getDoubleTapTimeout() && sameWord(buffer, off, Selection.getSelectionEnd(buffer))) {
-
-                        doubletap = true
-                    }
-
-                    tap[0].mWhen = event.eventTime
-                } else {
-                    val newtap = DoubleTapState()
-                    newtap.mWhen = event.eventTime
-                    doubleTapStates.add(newtap)
-                }
-
-                if (cap) {
-                    removeCustomTag(LAST_TAP_DOWN)
-                    if (onepointfivetap.size > 0 && onepointfivetap[0].active) {
-                        // If we selecting something with the onepointfivetap-and
-                        // swipe gesture, stop it on finger up.
-                        // MetaKeyKeyListener.stopSelecting(widget, buffer)
-                    } else {
-                        Selection.extendSelection(buffer, off)
-                    }
-                } else if (doubletap) {
-                    selectWord(buffer, off)
-                } else {
-                    Selection.setSelection(buffer, off)
-                }
-
-                // NOSpannableString does not support this
-                // MetaKeyKeyListener.adjustMetaAfterKeypress(buffer)
-
-                // resetLockedMeta(buffer.toLong())
-
-                return true
-            }
-        }
-
-        return handled
+        return handleTouchEvent(buffer, event)
     }
 
     fun selectWord(buffer: Spannable, off: Int) : Boolean {
