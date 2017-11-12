@@ -321,13 +321,13 @@ class SourceViewActivity : AppCompatActivity() {
     }
 
     private fun startColoring(zipEntryName: String, content: String) {
-        Observable.timer(500, TimeUnit.MILLISECONDS)
+        Observable.timer(200, TimeUnit.MILLISECONDS)
                 .subscribeOn(Schedulers.io())
                 .subscribe {
                     parsing = Observable.zip(
                             parser.parse(File(zipEntryName).extension, content)
                                     .buffer(2000),
-                            Observable.interval(1000, TimeUnit.MILLISECONDS),
+                            Observable.interval(200, TimeUnit.MILLISECONDS),
                             BiFunction { obs: List<ParseResult>, time: Long->obs}
                     )
                             .subscribeOn(Schedulers.io())
