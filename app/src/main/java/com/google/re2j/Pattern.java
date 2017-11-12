@@ -4,7 +4,7 @@ package com.google.re2j;
 
 import java.io.Serializable;
 
-import karino2.livejournal.com.zipsourcecodereading.Slice;
+import com.livejournal.karino2.zipsourcecodereading.Slice;
 
 import static com.google.re2j.Options.DEFAULT_OPTIONS;
 import static com.google.re2j.RE2.Anchor.ANCHOR_BOTH;

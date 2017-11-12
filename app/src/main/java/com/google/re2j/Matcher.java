@@ -5,7 +5,7 @@ package com.google.re2j;
 import com.google.re2j.RE2.Anchor;
 
 
-import karino2.livejournal.com.zipsourcecodereading.Slice;
+import com.livejournal.karino2.zipsourcecodereading.Slice;
 
 import static com.google.re2j.RE2.Anchor.ANCHOR_BOTH;
 import static com.google.re2j.RE2.Anchor.ANCHOR_START;

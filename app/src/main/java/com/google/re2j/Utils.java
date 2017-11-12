@@ -5,7 +5,7 @@
 package com.google.re2j;
 
 
-import karino2.livejournal.com.zipsourcecodereading.Slice;
+import com.livejournal.karino2.zipsourcecodereading.Slice;
 
 import static com.google.re2j.MachineInput.EOF;
 

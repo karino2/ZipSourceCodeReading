@@ -5,9 +5,9 @@
     android:id="@+id/parent"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="karino2.livejournal.com.zipsourcecodereading.SourceViewActivity">
+    tools:context="com.livejournal.karino2.zipsourcecodereading.SourceViewActivity">
 
-    <karino2.livejournal.com.zipsourcecodereading.text.LongTextView
+    <com.livejournal.karino2.zipsourcecodereading.text.LongTextView
         android:id="@+id/sourceTextView"
         android:layout_width="0dp"
         android:layout_height="0dp"

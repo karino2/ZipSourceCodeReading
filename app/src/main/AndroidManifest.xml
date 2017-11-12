@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="karino2.livejournal.com.zipsourcecodereading">
+    package="com.livejournal.karino2.zipsourcecodereading">
 
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
@@ -13,7 +13,7 @@
         android:largeHeap="true"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".MainActivity">
+        <activity android:name="com.livejournal.karino2.zipsourcecodereading.MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -26,14 +26,14 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".SearchActivity"
+            android:name="com.livejournal.karino2.zipsourcecodereading.SearchActivity"
             android:theme="@style/Theme.AppCompat.Light.NoActionBar" />
-        <activity android:name=".ZipChooseActivity" />
-        <activity android:name=".SourceViewActivity"
+        <activity android:name="com.livejournal.karino2.zipsourcecodereading.ZipChooseActivity" />
+        <activity android:name="com.livejournal.karino2.zipsourcecodereading.SourceViewActivity"
             android:windowSoftInputMode="stateHidden|adjustNothing"
             />
-        <activity android:name=".ZipFilerActivity"></activity>
-        <service android:name=".IndexingService" />
+        <activity android:name="com.livejournal.karino2.zipsourcecodereading.ZipFilerActivity"></activity>
+        <service android:name="com.livejournal.karino2.zipsourcecodereading.IndexingService" />
     </application>
 
 </manifest>

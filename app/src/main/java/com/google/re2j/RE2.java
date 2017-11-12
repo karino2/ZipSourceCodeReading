@@ -28,7 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import karino2.livejournal.com.zipsourcecodereading.Slice;
+import com.livejournal.karino2.zipsourcecodereading.Slice;
 
 import static com.google.re2j.MachineInput.EOF;
 import static com.google.re2j.Options.Algorithm.DFA;
