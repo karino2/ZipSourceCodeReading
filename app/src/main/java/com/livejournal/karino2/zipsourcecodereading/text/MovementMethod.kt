@@ -467,12 +467,7 @@ abstract class MovementMethod(val widget : LongTextView) {
             if (c0 === UnicodeBlock.BASIC_LATIN) {
                 val type = Character.getType(c)
 
-                if (c != '\'' &&
-                        type != Character.UPPERCASE_LETTER.toInt() &&
-                        type != Character.LOWERCASE_LETTER.toInt() &&
-                        type != Character.TITLECASE_LETTER.toInt() &&
-                        type != Character.MODIFIER_LETTER.toInt() &&
-                        type != Character.DECIMAL_DIGIT_NUMBER.toInt()) {
+                if (isNotWordCharacter(c, type)) {
                     break
                 }
             } else if (c0 !== cb) {
@@ -500,12 +495,7 @@ abstract class MovementMethod(val widget : LongTextView) {
             if (c0 === UnicodeBlock.BASIC_LATIN) {
                 val type = Character.getType(c)
 
-                if (c != '\'' &&
-                        type != Character.UPPERCASE_LETTER.toInt() &&
-                        type != Character.LOWERCASE_LETTER.toInt() &&
-                        type != Character.TITLECASE_LETTER.toInt() &&
-                        type != Character.MODIFIER_LETTER.toInt() &&
-                        type != Character.DECIMAL_DIGIT_NUMBER.toInt()) {
+                if (isNotWordCharacter(c, type)) {
                     break
                 }
             } else if (c0 !== cb) {
@@ -515,6 +505,16 @@ abstract class MovementMethod(val widget : LongTextView) {
         }
 
         return end
+    }
+
+    private fun isNotWordCharacter(c: Char, type: Int): Boolean {
+        return c != '\'' &&
+                c != '_' &&
+                type != Character.UPPERCASE_LETTER.toInt() &&
+                type != Character.LOWERCASE_LETTER.toInt() &&
+                type != Character.TITLECASE_LETTER.toInt() &&
+                type != Character.MODIFIER_LETTER.toInt() &&
+                type != Character.DECIMAL_DIGIT_NUMBER.toInt()
     }
 
 
