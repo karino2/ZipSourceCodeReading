@@ -294,9 +294,11 @@ abstract class MovementMethod(val widget : LongTextView) {
 
                 }
 
+                /*
                 if(touchMode == TouchMode.DOWN) {
                     widget.removeCallbacks(checkForTap)
                 }
+                */
             }
 
             MotionEvent.ACTION_UP -> {
@@ -307,8 +309,7 @@ abstract class MovementMethod(val widget : LongTextView) {
                         if(touchMode == TouchMode.DOWN || touchMode == TouchMode.TAP) {
                             widget.removeCallbacks(if(touchMode == TouchMode.DOWN) checkForTap else checkForLongPress)
 
-                            // invoke tap
-                            widget.moveCursorToVisibleOffset()
+                            widget.performTap()
                             touchMode = TouchMode.REST
                         }
                         return true

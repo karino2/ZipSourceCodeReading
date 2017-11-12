@@ -67,17 +67,20 @@ class LongTextView(context: Context, attrs: AttributeSet) : View(context, attrs)
         return selectionController.lastTouchOffset in start..end
     }
 
-    override fun performLongClick(): Boolean {
-        var handled = super.performLongClick()
+    fun performTap() {
+        moveCursorToVisibleOffset()
+        onTapUpEvent(oldSelStart, oldSelEnd)
+    }
 
-        if(!handled && !isPositionOnText(lastDownPositionX.toFloat(), lastDownPositionY.toFloat())) {
+    override fun performLongClick(): Boolean {
+        if(!isPositionOnText(lastDownPositionX.toFloat(), lastDownPositionY.toFloat())) {
             val offset = getOffset(lastDownPositionX, lastDownPositionY)
             stopSelectionActionMode()
             Selection.setSelection(text, offset)
-            handled = true
+            return true
         }
 
-        if(!handled && actionMode != null) {
+        if(actionMode != null) {
             if(touchPositionInSelection()) {
                 // start drag in original TextView, but we do nothing in this case.
                 // just keep action mode as is.
@@ -86,18 +89,10 @@ class LongTextView(context: Context, attrs: AttributeSet) : View(context, attrs)
                 selectCurrentWord()
                 selectionController.show()
             }
-            handled = true
+            return true
         }
 
-        if(! handled) {
-            handled = startSelectionActionMode()
-        }
-
-        if(handled)
-        {
-            eatTouchRelease = true
-        }
-        return handled
+        return startSelectionActionMode()
     }
 
     fun selectCurrentWord() = movement.selectWord(text, selectionController.lastTouchOffset)
@@ -637,57 +632,24 @@ class LongTextView(context: Context, attrs: AttributeSet) : View(context, attrs)
         return changed
     }
 
-    var eatTouchRelease = false
     var scrolled = false
 
+    // only valid during onTouchEvent
+    var oldSelStart = 0
+    var oldSelEnd = 0
+
     override fun onTouchEvent(event: MotionEvent): Boolean {
-        val action = event.action
 
         selectionController.onTouchEvent(event)
-
-        if(action == MotionEvent.ACTION_DOWN) {
-            // Reset this state; it will be re-set if super.onTouchEvent
-            // causes focus to move to the view.
-            touchFocusSelected = false
-            scrolled = false
-        }
-
-        val superHandled = super.onTouchEvent(event)
-
-
-        /*
-          * Don't handle the release after a long press, because it will
-          * move the selection away from whatever the menu action was
-          * trying to affect.
-          */
-        if(eatTouchRelease && action == MotionEvent.ACTION_UP) {
-            eatTouchRelease = false
-            return superHandled
-        }
-
         if(layout != null){
-            var handled = false
-
             // Save previous selection, in case this event is used to show the IME.
-            val oldSelStart = selectionStart
-            val oldSelEnd = selectionEnd
+            oldSelStart = selectionStart
+            oldSelEnd = selectionEnd
 
-            val oldScrollX = scrollX
-            val oldScrollY = scrollY
-
-            handled = handled || movement.onTouchEvent(this, text, event)
-
-            if (action == MotionEvent.ACTION_UP && isFocused && !scrolled) {
-                // Cannot be done by CommitSelectionReceiver, which might not always be called,
-                // for instance when dealing with an ExtractEditText.
-                onTapUpEvent(oldSelStart, oldSelEnd)
-            }
-            if (handled) {
-                return true
-            }
+            return  movement.onTouchEvent(this, text, event)
         }
 
-        return superHandled
+        return false
     }
 
     private fun onTapUpEvent(prevStart: Int, prevEnd: Int) {
@@ -695,11 +657,8 @@ class LongTextView(context: Context, attrs: AttributeSet) : View(context, attrs)
         val end = selectionEnd
 
         if (start == end) {
-            val selectAllOnFocus = false
 
-            val tapInsideSelectAllOnFocus = selectAllOnFocus && prevStart == 0 &&
-                    prevEnd == text.length
-            if (start >= prevStart && start < prevEnd && !tapInsideSelectAllOnFocus) {
+            if (start >= prevStart && start < prevEnd) {
                 // Restore previous selection
                 Selection.setSelection(text, prevStart, prevEnd)
 
@@ -710,13 +669,6 @@ class LongTextView(context: Context, attrs: AttributeSet) : View(context, attrs)
                 // Tapping outside stops selection mode, if any
                 stopSelectionActionMode()
 
-                /*
-                val selectAllGotFocus = selectAllOnFocus && touchFocusSelected
-                if (hasInsertionController() && !selectAllGotFocus) {
-                    getInsertionController().show()
-                    hideSelectionModifierCursorController()
-                }
-                */
             }
         }
     }
@@ -929,16 +881,6 @@ class LongTextView(context: Context, attrs: AttributeSet) : View(context, attrs)
     get() = Selection.getSelectionEnd(text)
 
 
-    var touchFocusSelected = false
-
-    /**
-     * Returns true, only while processing a touch gesture, if the initial
-     * touch down event caused focus to move to the text view and as a result
-     * its selection changed.  Only valid while processing the touch gesture
-     * of interest.
-     */
-    val didTouchFocusSelect : Boolean
-    get() = touchFocusSelected
 
     fun moveCursorToVisibleOffset() : Boolean {
         val end = selectionEnd
