@@ -353,6 +353,11 @@ abstract class MovementMethod(val widget : LongTextView) {
 
     }
 
+    fun cancelFling() {
+        touchMode = TouchMode.REST
+        flingRunnable.endFling()
+    }
+
     private fun recycleVelocityTracker() {
         velocityTracker?.let {
             velocityTracker!!.recycle()

@@ -77,6 +77,7 @@ class LongTextView(context: Context, attrs: AttributeSet) : View(context, attrs)
             val offset = getOffset(lastDownPositionX, lastDownPositionY)
             stopSelectionActionMode()
             Selection.setSelection(text, offset)
+
             return true
         }
 
@@ -96,6 +97,8 @@ class LongTextView(context: Context, attrs: AttributeSet) : View(context, attrs)
     }
 
     fun selectCurrentWord() = movement.selectWord(text, selectionController.lastTouchOffset)
+
+    fun cancelFling() = movement.cancelFling()
 
     inner class SelectionActionModeCallback : ActionMode.Callback {
 
@@ -314,7 +317,7 @@ class LongTextView(context: Context, attrs: AttributeSet) : View(context, attrs)
         movement.initialize(text)
 
         layout?.let {
-            // This view does not support wrap_content, so chnaging text does not cause relayout.
+            // This view does not support wrap_content, so changing text does not cause relayout.
             val want = layout!!.width
             makeNewLayout(want, false)
 
@@ -323,6 +326,9 @@ class LongTextView(context: Context, attrs: AttributeSet) : View(context, attrs)
         return text
     }
 
+    val fastScroller : FastScroller by lazy {
+        FastScroller(this)
+    }
 
     val movement = object: MovementMethod(this@LongTextView) {
         override fun notifyScroll() {
@@ -416,6 +422,9 @@ class LongTextView(context: Context, attrs: AttributeSet) : View(context, attrs)
         if (line == 0) r.top -= paddingTop
         if (line == layout!!.lineCount - 1) r.bottom += paddingBottom
     }
+
+    val lineCount : Int
+    get() = layout?.lineCount ?: 0
 
     fun convertFromViewportToContentCoordinates(r: Rect) {
         val horizontalOffset = viewportToContentHorizontalOffset()
@@ -640,6 +649,11 @@ class LongTextView(context: Context, attrs: AttributeSet) : View(context, attrs)
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
 
+        if(fastScroller.onTouchEvent(event)) {
+            cancelFling()
+            return true
+        }
+
         selectionController.onTouchEvent(event)
         if(layout != null){
             // Save previous selection, in case this event is used to show the IME.
@@ -652,6 +666,17 @@ class LongTextView(context: Context, attrs: AttributeSet) : View(context, attrs)
         return false
     }
 
+    override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
+        fastScroller.onSizeChanged(w, h, oldw, oldh)
+    }
+
+    override fun onScrollChanged(l: Int, t: Int, oldl: Int, oldt: Int) {
+        super.onScrollChanged(l, t, oldl, oldt)
+        layout?.let {
+            fastScroller.onScroll(t, this.height, layout!!.height)
+        }
+    }
+
     private fun onTapUpEvent(prevStart: Int, prevEnd: Int) {
         val start = selectionStart
         val end = selectionEnd
@@ -661,6 +686,7 @@ class LongTextView(context: Context, attrs: AttributeSet) : View(context, attrs)
             if (start >= prevStart && start < prevEnd) {
                 // Restore previous selection
                 Selection.setSelection(text, prevStart, prevEnd)
+
 
                 // Tapping inside the selection displays the cut/copy/paste context menu
                 startSelectionActionMode()
@@ -847,6 +873,8 @@ class LongTextView(context: Context, attrs: AttributeSet) : View(context, attrs)
 
         layout!!.draw(canvas, highlight, highlightPathPaint, voffsetCursor-voffsetText, selLine, lineNumberWidth, lineNumberPaint, spacePaths)
 
+
+        fastScroller.draw(canvas)
     }
 
 
@@ -925,19 +953,50 @@ class LongTextView(context: Context, attrs: AttributeSet) : View(context, attrs)
 
 
     fun moveToLine(fline : Int) {
-        val vline = layout!!.fileLineToVLine(fline)
-
-        // centering on specified line.
-        val vspace = this.bottom - this.top - paddingTop - paddingBottom
-        val linePerScreen = vspace/layout!!.oneLineHeight
-
-        val targetLine = Math.max(0, Math.min(layout!!.lineCount-1, vline+linePerScreen/2))
-
-        val offset = layout!!.getLineStart(targetLine)
-        Selection.setSelection(text, offset, offset)
+        moveLineSelectionOnly(fline)
 
         registerForPreDraw()
         invalidate()
+    }
+
+
+    /*
+     Fix fast scroll bug.
+     When fastScroll call moveToLine, selectionEnd is propery updated, but scrollY is not yet.
+     And after finishing fastscroll tap handling, endFling is called and this in turn call moveCursorToVisibleOffset, this will revert selectionEnd.
+     For FastScroll case, Layout must be already there and just update scroll position here must be no problem.
+     */
+    fun moveToVLineNow(vline: Int) {
+        moveVLineSelectionOnly(vline)
+        if(vline == 0) {
+            // special handling for top. When scroll to top, user want to be exactlly top.
+            scrollTo(0, 0)
+        } else {
+
+            var curs = selectionEnd
+            if (curs >= 0) {
+                bringPointIntoView(curs)
+            }
+        }
+
+        invalidate()
+    }
+
+    private fun moveLineSelectionOnly(fline: Int) {
+        val vline = layout!!.fileLineToVLine(fline)
+
+        moveVLineSelectionOnly(vline)
+    }
+
+    private fun moveVLineSelectionOnly(vline: Int) {
+        // centering on specified line.
+        val vspace = this.bottom - this.top - paddingTop - paddingBottom
+        val linePerScreen = vspace / layout!!.oneLineHeight
+
+        val targetLine = Math.max(0, Math.min(layout!!.lineCount - 1, vline + linePerScreen / 2))
+
+        val offset = layout!!.getLineStart(targetLine)
+        Selection.setSelection(text, offset, offset)
     }
 
 
