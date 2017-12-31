@@ -5,4 +5,5 @@
     <string name="copy">copy</string>
     <string name="search">search</string>
     <string name="gsearch">gsearch</string>
+    <string name="index_explation">Keep this activity alive until indexing is finished.\nActivity recycle during indexing is not yet supported!</string>
 </resources>
