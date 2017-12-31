@@ -27,7 +27,8 @@
         <activity
             android:name="com.livejournal.karino2.zipsourcecodereading.SearchActivity"
             android:theme="@style/Theme.AppCompat.Light.NoActionBar" />
-        <activity android:name="com.livejournal.karino2.zipsourcecodereading.ZipChooseActivity" />
+        <activity android:name="com.livejournal.karino2.zipsourcecodereading.ZipChooseActivity"
+            android:windowSoftInputMode="adjustResize"/>
         <activity android:name="com.livejournal.karino2.zipsourcecodereading.SourceViewActivity"
             android:windowSoftInputMode="stateHidden|adjustNothing"
             />
