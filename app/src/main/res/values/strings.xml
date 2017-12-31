@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">ZipSourceCodeReading</string>
+    <string name="app_name">ZSCReading</string>
     <string name="cancel_select">cancel select</string>
     <string name="start_select">start select</string>
     <string name="copy">copy</string>
