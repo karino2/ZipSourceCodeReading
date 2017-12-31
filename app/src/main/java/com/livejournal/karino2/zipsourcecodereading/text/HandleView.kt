@@ -218,5 +218,5 @@ abstract class HandleView(val parent: LongTextView,  pos: HandleSide) : View(par
         parent.convertFromViewportToContentCoordinates(bounds)
         moveTo(bounds.left+offsetX, bounds.top)
     }
-    val offsetX = -20
+    val offsetX = -7
 }
