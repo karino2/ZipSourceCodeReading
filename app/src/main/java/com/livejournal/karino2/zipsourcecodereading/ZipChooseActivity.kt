@@ -56,6 +56,11 @@ class ZipChooseActivity : AppCompatActivity() {
 
     }
 
+    override fun onNewIntent(intent: Intent?) {
+        // indexing finished. goto search activity.
+        replaceToSearchActivity()
+    }
+
     private val zipPathField: EditText
         get() {
             val et = findViewById(R.id.zipPathField) as EditText
@@ -90,13 +95,17 @@ class ZipChooseActivity : AppCompatActivity() {
         val zipFile = File(path)
         val indexFile = findIndex(zipFile)
         indexFile?.let {
-            val intent = Intent(this, SearchActivity::class.java)
-            startActivity(intent)
-            finish()
+            replaceToSearchActivity()
             return
         }
         startIndexingService(zipFile)
 
+    }
+
+    private fun replaceToSearchActivity() {
+        val intent = Intent(this, SearchActivity::class.java)
+        startActivity(intent)
+        finish()
     }
 
     private fun startIndexingService(zipFile: File) {

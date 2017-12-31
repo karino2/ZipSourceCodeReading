@@ -89,6 +89,13 @@ class IndexingService : IntentService("IndexingService") {
         notificationManager.notify(NOTIFICATION_ID, notificationBuilder.build())
 
 
+        // This bring activity without user intention.
+        // I think this is not good, but implement proper way is a little complex.
+        // Also, currently we do not support process recycle during indexing.
+        // So I assume ZipChooseActivity is active at this time, and this assumption is true for most of time.
+        val intent2 = Intent(this, ZipChooseActivity::class.java)
+        intent2.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
+        startActivity(intent2)
     }
 
 }
