@@ -23,6 +23,7 @@ import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.Disposable
 import io.reactivex.schedulers.Schedulers
 import com.livejournal.karino2.zipsourcecodereading.index.Index
+import io.reactivex.subjects.PublishSubject
 import java.io.File
 import java.util.concurrent.TimeUnit
 import java.util.zip.ZipEntry
@@ -157,16 +158,28 @@ class SearchActivity : AppCompatActivity() {
         recycle.addItemDecoration(divider)
 
 
+        var searchPublisher = PublishSubject.create<Int>()
+        searchPublisher.throttleFirst(500L, TimeUnit.MILLISECONDS)
+                .subscribe() {
+                    when(it) {
+                        EditorInfo.IME_ACTION_SEARCH-> {
+                            hideSoftkey()
+                            startSearch()
+                        }
+                        EditorInfo.IME_ACTION_UNSPECIFIED -> {
+                            startSearch();
+                        }
+                    }
+                }
+
+
         (findViewById(R.id.searchEntryField) as EditText).setOnEditorActionListener(fun(view, actionId, keyEvent)  : Boolean {
-            if(actionId == EditorInfo.IME_ACTION_SEARCH) {
-                hideSoftkey()
-                startSearch()
-                return true;
-            }
-            // for hardware keyboard.
-            if(actionId == EditorInfo.IME_ACTION_UNSPECIFIED) {
-                startSearch();
-                return true;
+            when(actionId) {
+                EditorInfo.IME_ACTION_SEARCH, EditorInfo.IME_ACTION_UNSPECIFIED /* for hardware keyboard. */ -> {
+                    searchPublisher.onNext(actionId)
+                    return true
+                }
+
             }
             return false;
         })
