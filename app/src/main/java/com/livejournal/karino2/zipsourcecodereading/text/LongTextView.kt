@@ -861,15 +861,11 @@ class LongTextView(context: Context, attrs: AttributeSet) : View(context, attrs)
                 highlightPathPaint.setStyle(Paint.Style.FILL)
 
                 highlightPathBogus = false
-                highlight = highlightPath
             }
+            highlight = highlightPath
         }
 
-
-
-
         val selLine = layout!!.getLineForOffset(selEnd)
-
 
         layout!!.draw(canvas, highlight, highlightPathPaint, voffsetCursor-voffsetText, selLine, lineNumberWidth, lineNumberPaint, spacePaths)
 
