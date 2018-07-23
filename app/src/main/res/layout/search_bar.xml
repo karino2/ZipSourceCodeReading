@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    style="@android:style/ButtonBar"
+    android:layout_gravity="top|end"
+    android:layout_marginRight="8dp"
+    android:layout_marginTop="8dp"
+    android:gravity="center_vertical"
+
+    android:layout_width="match_parent" android:layout_height="match_parent">
+    <EditText
+        android:id="@+id/edittext"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true"
+        android:layout_toStartOf="@+id/previous"
+        android:imeOptions="actionSearch"
+        android:inputType="textFilter" />
+
+    <ImageButton
+        android:id="@+id/cancel"
+        android:layout_width="48dip"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        android:src="@drawable/cancel" />
+
+    <ImageButton
+        android:id="@+id/next"
+        android:layout_width="48dip"
+        android:layout_height="wrap_content"
+        android:layout_toLeftOf="@id/cancel"
+        android:src="@drawable/next" />
+
+    <ImageButton
+        android:id="@+id/previous"
+        android:layout_width="48dip"
+        android:layout_height="wrap_content"
+        android:layout_toLeftOf="@id/next"
+        android:src="@drawable/prev" />
+
+</RelativeLayout>

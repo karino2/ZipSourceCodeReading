@@ -66,39 +66,54 @@ class SourceViewActivity : AppCompatActivity() {
         return true
     }
 
-    val searchField : EditText by lazy {
-        val sf = searchBar.findViewById(R.id.edittext) as EditText
-        sf.setOnEditorActionListener(fun(view, actionId, keyEvent)  : Boolean {
-            if(actionId == EditorInfo.IME_ACTION_SEARCH) {
-                searchNext()
-                return true;
-            }
-            // for hardware keyboard.
-            if(actionId == EditorInfo.IME_ACTION_UNSPECIFIED) {
-                searchNext();
-                return true;
-            }
-        return false;
-        })
-        sf
-    }
-
-    val searchBar : View by lazy {
-        val rl = findViewById(R.id.search) as RelativeLayout
-        setupSearchBar(rl)
-        rl
+    val searchField : EditText
+    get() {
+        return supportActionBar!!.customView.findViewById(R.id.edittext) as EditText
     }
 
 
+    var isSearchOpened = false
+    private fun showSearchBar() {
+        val actionBar = supportActionBar!!
+        if(!isSearchOpened) {
+            isSearchOpened = true
+            actionBar.setDisplayShowCustomEnabled(true)
+            actionBar.setCustomView(R.layout.search_bar)
+            actionBar.setDisplayShowTitleEnabled(false)
 
-    private fun setupSearchBar(searchBar : View) {
-        val cancelButton = searchBar.findViewById(R.id.cancel) as ImageButton
-        cancelButton.setOnClickListener { hideSearchBar() }
-        val prevButton = searchBar.findViewById(R.id.previous) as ImageButton
-        prevButton.setOnClickListener { searchPrevious() }
-        val nextButton = searchBar.findViewById(R.id.next) as ImageButton
-        nextButton.setOnClickListener { searchNext() }
+            val searchBar = actionBar.customView
+            val et = searchBar.findViewById(R.id.edittext) as EditText
+            et.setOnEditorActionListener(fun(view, actionId, keyEvent)  : Boolean {
+                if(actionId == EditorInfo.IME_ACTION_SEARCH) {
+                    searchNext()
+                    return true;
+                }
+                // for hardware keyboard.
+                if(actionId == EditorInfo.IME_ACTION_UNSPECIFIED) {
+                    searchNext();
+                    return true;
+                }
+                return false;
+            })
+
+            val cancelButton = searchBar.findViewById(R.id.cancel) as ImageButton
+            cancelButton.setOnClickListener { hideSearchBar() }
+            val prevButton = searchBar.findViewById(R.id.previous) as ImageButton
+            prevButton.setOnClickListener { searchPrevious() }
+            val nextButton = searchBar.findViewById(R.id.next) as ImageButton
+            nextButton.setOnClickListener { searchNext() }
+
+
+        }
     }
+
+    private fun hideSearchBar() {
+        val actionBar = supportActionBar!!
+        actionBar.setDisplayShowCustomEnabled(false)
+        actionBar.setDisplayShowTitleEnabled(true)
+        isSearchOpened = false
+    }
+
 
     private fun searchPrevious() {
         val text = sourceTextView.text
@@ -158,16 +173,6 @@ class SourceViewActivity : AppCompatActivity() {
             }
         }
 
-    }
-
-    fun showSearchBar() {
-        searchBar.visibility = View.VISIBLE
-        searchField.requestFocus()
-
-    }
-
-    fun hideSearchBar() {
-        searchBar.visibility = View.GONE
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
