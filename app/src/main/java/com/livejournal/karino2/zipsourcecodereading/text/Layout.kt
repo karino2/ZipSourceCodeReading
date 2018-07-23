@@ -517,10 +517,10 @@ class Layout(val text: Spannable, val textPaint: TextPaint, var width: Int, val 
                                     ((j - 1 < here) || !Character.isDigit(chs[j - 1 - start])) &&
                                     ((j + 1 >= next) || !Character.isDigit(chs[j + 1 - start])))
                             ||
-                                ((((c == '/') || (c == '-')) and ((j + 1 >= next) || !Character.isDigit(chs[j + 1 - start]))))
+                                ((((c == '/') || (c == '-')) && ((j + 1 >= next) || !Character.isDigit(chs[j + 1 - start]))))
                             ||
-                                (((c >= FIRST_CJK) and isIdeographic(c, true) and
-                                        (j + 1 < next) and isIdeographic(chs[j + 1 - start], false)))))
+                                (((c >= FIRST_CJK) && isIdeographic(c, true) && (j + 1 < next)
+                                        && isIdeographic(chs[j + 1 - start], false)))))
                         {
                             ok = j + 1
 
@@ -1217,14 +1217,14 @@ class Layout(val text: Spannable, val textPaint: TextPaint, var width: Int, val 
 
                 if ( spacePaint != null && j== there ){
                     // IDE messed up for text.charAt, so I add cast....
-                    if ( (end < text.length) and  ((text as java.lang.CharSequence).charAt(end)=='\n')){
+                    if ( (end < text.length) &&  ((text as java.lang.CharSequence).charAt(end)=='\n')){
                         canvas.translate(x+h, y);
                         canvas.drawPath(spacePaths[1], spacePaint);
                         canvas.translate(-x-h, -y);
                     }
                 }
                 segstart = j + 1;
-            } else if ( (spacePaint!=null) and  (buf[j]==0x3000.toChar()) ){    // Ideographic Space ( for Japanese charset )
+            } else if ( (spacePaint!=null) &&  (buf[j]==0x3000.toChar()) ){    // Ideographic Space ( for Japanese charset )
                 h += Styled.drawText(canvas, text,
                         start + segstart, start + j,
                          x + h,
