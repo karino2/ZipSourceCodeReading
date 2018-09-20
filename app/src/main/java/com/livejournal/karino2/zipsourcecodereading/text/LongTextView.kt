@@ -51,7 +51,7 @@ class LongTextView(context: Context, attrs: AttributeSet) : View(context, attrs)
             return false
 
         val end = layout!!.getLineRight(line)
-        if (contX > layout!!.getLineRight(line))
+        if (contX > end)
             return false
         return true
     }
@@ -1050,11 +1050,11 @@ class LongTextView(context: Context, attrs: AttributeSet) : View(context, attrs)
         y = Math.min(height - paddingBottom - 1, y)
         y += scrollY
 
-        var line = layout!!.getLineForVertical(y)
+        var line = layout.getLineForVertical(y)
 
-        val previousLine = layout!!.getLineForOffset(previousOffset)
-        val previousLineTop = layout!!.getLineTop(previousLine)
-        val previousLineBottom = layout!!.getLineBottom(previousLine)
+        val previousLine = layout.getLineForOffset(previousOffset)
+        val previousLineTop = layout.getLineTop(previousLine)
+        val previousLineBottom = layout.getLineBottom(previousLine)
         val hysteresisThreshold = (previousLineBottom - previousLineTop) / 8
 
         // If new line is just before or after previous line and y position is less than

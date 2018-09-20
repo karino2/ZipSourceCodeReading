@@ -231,14 +231,13 @@ class SourceViewActivity : AppCompatActivity() {
     */
 
     fun tryScroll(tv : LongTextView, lineNum: Int) : Boolean {
-        val layout = tv.layout ?: return false
+        tv.layout ?: return false
 
         sourceTextView.moveToLine(lineNum)
         return true
     }
 
     private fun scrollToLine(sv: ScrollView, layout: Layout, lineNum: Int) {
-        val pos = layout.getLineTop(lineNum)
         sv.smoothScrollTo(0, layout.getLineTop(lineNum))
     }
 
