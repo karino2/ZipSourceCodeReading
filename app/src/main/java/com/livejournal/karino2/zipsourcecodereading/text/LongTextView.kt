@@ -151,8 +151,9 @@ class LongTextView(context: Context, attrs: AttributeSet) : View(context, attrs)
                 return true
             }
             R.id.ID_SEARCH-> {
-                onSearch(selectedText.toString())
+                val sword = selectedText.toString()
                 stopSelectionActionMode()
+                onSearch(sword)
                 return true
             }
             R.id.ID_GSEARCH-> {
