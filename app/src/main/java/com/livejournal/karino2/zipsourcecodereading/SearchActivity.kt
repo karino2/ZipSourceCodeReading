@@ -73,16 +73,16 @@ class SearchActivity : AppCompatActivity() {
     var prevSearch : Disposable? = null
 
     fun showSearchingIndicator() {
-        (findViewById(R.id.progressBar)).visibility = View.VISIBLE
+        (findViewById<View>(R.id.progressBar)).visibility = View.VISIBLE
     }
 
     fun hideSearchingIndicator() {
-        (findViewById(R.id.progressBar)).visibility = View.GONE
+        (findViewById<View>(R.id.progressBar)).visibility = View.GONE
 
     }
 
     val searchEntryField by lazy {
-        findViewById(R.id.searchEntryField) as EditText
+        findViewById<EditText>(R.id.searchEntryField)
     }
 
     fun startSearch() {
@@ -94,7 +94,7 @@ class SearchActivity : AppCompatActivity() {
         searchAdapter.notifyDataSetChanged()
 
 
-        val fpat = (findViewById(R.id.fileEntryField) as EditText).text.toString()
+        val fpat = findViewById<EditText>(R.id.fileEntryField).text.toString()
         val spat =  searchEntryField.text.toString()
 
         val ffilter = fun(path : String) : Boolean {

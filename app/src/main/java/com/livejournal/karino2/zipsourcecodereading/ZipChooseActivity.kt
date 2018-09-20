@@ -6,6 +6,7 @@ import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Environment
 import android.provider.DocumentsContract
+import android.view.View
 import android.widget.EditText
 import java.io.File
 import java.io.IOException
@@ -74,13 +75,13 @@ class ZipChooseActivity : AppCompatActivity() {
         val zipPath = MainActivity.lastZipPath(this)
         zipPath?.let{ zipPathField.setText(zipPath) }
 
-        findViewById(R.id.browseZipButton).setOnClickListener { _ ->
+        findViewById<View>(R.id.browseZipButton).setOnClickListener { _ ->
             val intent = Intent(Intent.ACTION_GET_CONTENT)
             intent.setType("application/zip")
             startActivityForResult(intent, REQUEST_PICK_ZIP);
         }
 
-        findViewById(R.id.indexStartButton).setOnClickListener { _ ->
+        findViewById<View>(R.id.indexStartButton).setOnClickListener { _ ->
             val path = zipPathField.text.toString()
             onZipPathChosen(path)
         }
@@ -109,7 +110,7 @@ class ZipChooseActivity : AppCompatActivity() {
     }
 
     private fun startIndexingService(zipFile: File) {
-        findViewById(R.id.indexStartButton).isEnabled = false
+        findViewById<View>(R.id.indexStartButton).isEnabled = false
         showMessage("Start indexing...")
 
         val intent = Intent(this, IndexingService::class.java)

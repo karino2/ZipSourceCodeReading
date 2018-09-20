@@ -6,7 +6,7 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.os.Handler
-import android.support.v7.app.NotificationCompat
+import android.support.v4.app.NotificationCompat
 import com.livejournal.karino2.zipsourcecodereading.index.IndexException
 import com.livejournal.karino2.zipsourcecodereading.index.IndexWriter
 import java.io.DataInputStream
