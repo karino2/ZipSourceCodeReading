@@ -31,7 +31,7 @@ class ZipFilerActivity : AppCompatActivity() {
             it.setDisplayHomeAsUpEnabled(true)
         }
 
-        listView.onItemClickListener = AdapterView.OnItemClickListener { adapterView, view, i, l ->
+        listView.onItemClickListener = AdapterView.OnItemClickListener { _, _, i, _ ->
             val item = entries[i]
             if(item.isDirectory) {
                 showContent(item)

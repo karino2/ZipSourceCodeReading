@@ -82,8 +82,8 @@ class SourceViewActivity : AppCompatActivity() {
             actionBar.setDisplayShowTitleEnabled(false)
 
             val searchBar = actionBar.customView
-            val et = searchBar.findViewById(R.id.edittext) as EditText
-            et.setOnEditorActionListener(fun(view, actionId, keyEvent)  : Boolean {
+            val et = searchBar.findViewById<EditText>(R.id.edittext)
+            et.setOnEditorActionListener(fun(_, actionId, _)  : Boolean {
                 if(actionId == EditorInfo.IME_ACTION_SEARCH) {
                     searchNext()
                     return true;
@@ -96,11 +96,11 @@ class SourceViewActivity : AppCompatActivity() {
                 return false;
             })
 
-            val cancelButton = searchBar.findViewById(R.id.cancel) as ImageButton
+            val cancelButton = searchBar.findViewById<ImageButton>(R.id.cancel)
             cancelButton.setOnClickListener { hideSearchBar() }
-            val prevButton = searchBar.findViewById(R.id.previous) as ImageButton
+            val prevButton = searchBar.findViewById<ImageButton>(R.id.previous)
             prevButton.setOnClickListener { searchPrevious() }
-            val nextButton = searchBar.findViewById(R.id.next) as ImageButton
+            val nextButton = searchBar.findViewById<ImageButton>(R.id.next)
             nextButton.setOnClickListener { searchNext() }
 
 
@@ -118,7 +118,7 @@ class SourceViewActivity : AppCompatActivity() {
     private fun searchPrevious() {
         val text = sourceTextView.text
         val search = searchField.text.toString()
-        if (search.length == 0) {
+        if (search.isEmpty()) {
             return
         }
         val selection = sourceTextView.selectionStart - 1
@@ -158,7 +158,7 @@ class SourceViewActivity : AppCompatActivity() {
             Selection.setSelection(sourceTextView.text as Spannable,
                     next,
                     next + search.length)
-            if (!sourceTextView.isFocused()) {
+            if (!sourceTextView.isFocused) {
                 sourceTextView.requestFocus()
             }
         } else { // wrap
@@ -167,7 +167,7 @@ class SourceViewActivity : AppCompatActivity() {
                 Selection.setSelection(sourceTextView.text as Spannable,
                         next,
                         next + search.length)
-                if (!sourceTextView.isFocused()) {
+                if (!sourceTextView.isFocused) {
                     sourceTextView.requestFocus()
                 }
             }
@@ -228,10 +228,7 @@ class SourceViewActivity : AppCompatActivity() {
     */
 
     fun tryScroll(tv : LongTextView, lineNum: Int) : Boolean {
-        val layout = sourceTextView.layout
-
-        if(layout == null)
-            return false
+        val layout = tv.layout ?: return false
 
         sourceTextView.moveToLine(lineNum)
         return true
@@ -333,7 +330,7 @@ class SourceViewActivity : AppCompatActivity() {
                             parser.parse(File(zipEntryName).extension, content)
                                     .buffer(2000),
                             Observable.interval(200, TimeUnit.MILLISECONDS),
-                            BiFunction { obs: List<ParseResult>, time: Long->obs}
+                            BiFunction { obs: List<ParseResult>, _/*time*/: Long->obs}
                     )
                             .subscribeOn(Schedulers.io())
                             .observeOn(AndroidSchedulers.mainThread())

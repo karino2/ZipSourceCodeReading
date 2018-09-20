@@ -173,7 +173,7 @@ class SearchActivity : AppCompatActivity() {
                 }
 
 
-        (findViewById(R.id.searchEntryField) as EditText).setOnEditorActionListener(fun(view, actionId, keyEvent)  : Boolean {
+        (findViewById(R.id.searchEntryField) as EditText).setOnEditorActionListener(fun(_, actionId, _)  : Boolean {
             when(actionId) {
                 EditorInfo.IME_ACTION_SEARCH, EditorInfo.IME_ACTION_UNSPECIFIED /* for hardware keyboard. */ -> {
                     searchPublisher.onNext(actionId)
