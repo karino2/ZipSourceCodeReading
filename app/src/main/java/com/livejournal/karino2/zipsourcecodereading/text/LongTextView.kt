@@ -233,7 +233,7 @@ class LongTextView(context: Context, attrs: AttributeSet) : View(context, attrs)
         stopSelectionActionMode()
     }
 
-    private val selectedText: CharSequence
+    val selectedText: CharSequence
     get() {
         val minsel = Math.max(0, Math.min(selectionStart, selectionEnd))
         val maxsel = Math.max(0, Math.max(selectionStart, selectionEnd))

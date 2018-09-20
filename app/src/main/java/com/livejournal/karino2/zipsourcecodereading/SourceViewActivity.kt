@@ -48,13 +48,16 @@ class SourceViewActivity : AppCompatActivity() {
             searchField.setText(sword)
             searchNext()
         }
-        sourceTextView.onGSearch = {gword ->
-            val intent = Intent(this, SearchActivity::class.java)
-            intent.putExtra("SEARCH_WORD", gword)
-            startActivity(intent)
-        }
+        sourceTextView.onGSearch = {gword -> startGSearch(gword) }
 
 
+
+    }
+
+    private fun startGSearch(gword: String) {
+        val intent = Intent(this, SearchActivity::class.java)
+        intent.putExtra("SEARCH_WORD", gword)
+        startActivity(intent)
     }
 
     val handler by lazy {
@@ -182,8 +185,8 @@ class SourceViewActivity : AppCompatActivity() {
                 return true
             }
             R.id.search_global -> {
-                val intent = Intent(this, SearchActivity::class.java)
-                startActivity(intent)
+                val sword = sourceTextView.selectedText.toString()
+                startGSearch(sword)
                 return true
             }
 
