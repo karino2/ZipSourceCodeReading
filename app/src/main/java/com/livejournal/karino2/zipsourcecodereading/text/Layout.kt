@@ -1126,7 +1126,7 @@ class Layout(val text: Spannable, val textPaint: TextPaint, var width: Int, val 
             val x = left
 
             if(lineNumberWidth != 0) {
-                val fline = fileLines[i]
+                val fline = fileLines[i]+1
                 if(fline != lastDrawnLineNum) {
                     lastDrawnLineNum = fline
                     val linenum = "      ${fline}"
