@@ -46,7 +46,15 @@ class Layout(val text: Spannable, val textPaint: TextPaint, var width: Int, val 
     val TAB_MASK = 0x20000000
 
 
-    fun getLineStart(line : Int) = lines[line+START] and START_MASK
+    fun getLineStart(line : Int)  : Int {
+        val start = lines[line+START] and START_MASK
+        if(line == 0 || start != 0) {
+            return start
+        }
+        // if line == linecount, should retrun text length.
+        return text.length
+    }
+
     fun getLineContainsTab(line: Int) =  lines[line + TAB] and TAB_MASK !== 0
 
     fun getParagraphLeft(line: Int) : Int {
