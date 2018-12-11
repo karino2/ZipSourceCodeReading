@@ -186,7 +186,7 @@ class SearchActivity : AppCompatActivity() {
 
         intent?.let {
             val word = intent.getStringExtra("SEARCH_WORD")
-            word?.let {
+            if(!word.isNullOrEmpty()) {
                 searchEntryField.setText(word)
                 handler.post { startSearch() }
             }
