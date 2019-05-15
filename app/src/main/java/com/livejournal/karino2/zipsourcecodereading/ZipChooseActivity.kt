@@ -175,4 +175,30 @@ class ZipChooseActivity : AppCompatActivity() {
 
         super.onActivityResult(requestCode, resultCode, data)
     }
+
+
+    fun requestReadExternalStorage(){
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE)
+                == PackageManager.PERMISSION_GRANTED) {
+            return
+        } else {
+            ActivityCompat.requestPermissions(this, arrayOf(android.Manifest.permission.READ_EXTERNAL_STORAGE), PERMISSION_REQUEST_READ_EXTERNAL_STORAGE_ID)
+        }
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        when (requestCode) {
+            PERMISSION_REQUEST_READ_EXTERNAL_STORAGE_ID ->{
+                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    return
+                }
+            }
+
+        }
+
+        findViewById<View>(R.id.browseZipButton).isEnabled = false
+
+    }
 }
+
+
