@@ -2,7 +2,9 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
+      <module fileurl="file://$PROJECT_DIR$/.idea/ZipSourceCodeReading.iml" filepath="$PROJECT_DIR$/.idea/ZipSourceCodeReading.iml" />
       <module fileurl="file://$PROJECT_DIR$/ZipSourceCodeReading.iml" filepath="$PROJECT_DIR$/ZipSourceCodeReading.iml" />
+      <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
     </modules>
   </component>

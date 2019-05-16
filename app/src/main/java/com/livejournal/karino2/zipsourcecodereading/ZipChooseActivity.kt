@@ -1,13 +1,20 @@
 package com.livejournal.karino2.zipsourcecodereading
 
+import android.Manifest
+import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Environment
+import android.os.Handler
 import android.provider.DocumentsContract
+import android.support.v4.app.ActivityCompat
+import android.support.v4.content.ContextCompat
 import android.view.View
 import android.widget.EditText
+import android.widget.Toast
 import java.io.File
 import java.io.IOException
 
@@ -68,6 +75,8 @@ class ZipChooseActivity : AppCompatActivity() {
             return et
         }
 
+    val PERMISSION_REQUEST_READ_EXTERNAL_STORAGE_ID = 1
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_zip_choose)
@@ -85,6 +94,8 @@ class ZipChooseActivity : AppCompatActivity() {
             val path = zipPathField.text.toString()
             onZipPathChosen(path)
         }
+
+        requestReadExternalStorage()
 
     }
 
@@ -166,4 +177,32 @@ class ZipChooseActivity : AppCompatActivity() {
 
         super.onActivityResult(requestCode, resultCode, data)
     }
+
+
+    fun requestReadExternalStorage(){
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE)
+                == PackageManager.PERMISSION_GRANTED) {
+            return
+        } else {
+            ActivityCompat.requestPermissions(this, arrayOf(android.Manifest.permission.READ_EXTERNAL_STORAGE), PERMISSION_REQUEST_READ_EXTERNAL_STORAGE_ID)
+        }
+    }
+
+    val handler by lazy { Handler() }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        when (requestCode) {
+            PERMISSION_REQUEST_READ_EXTERNAL_STORAGE_ID ->{
+                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    return
+                }
+            }
+
+        }
+
+        Toast.makeText(this, "Not enough permission. Close app.", Toast.LENGTH_LONG ).show();
+        handler.postDelayed({finish()}, 200)
+    }
 }
+
+
