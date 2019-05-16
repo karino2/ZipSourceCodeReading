@@ -8,11 +8,13 @@ import android.net.Uri
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Environment
+import android.os.Handler
 import android.provider.DocumentsContract
 import android.support.v4.app.ActivityCompat
 import android.support.v4.content.ContextCompat
 import android.view.View
 import android.widget.EditText
+import android.widget.Toast
 import java.io.File
 import java.io.IOException
 
@@ -186,6 +188,8 @@ class ZipChooseActivity : AppCompatActivity() {
         }
     }
 
+    val handler by lazy { Handler() }
+
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         when (requestCode) {
             PERMISSION_REQUEST_READ_EXTERNAL_STORAGE_ID ->{
@@ -196,8 +200,8 @@ class ZipChooseActivity : AppCompatActivity() {
 
         }
 
-        findViewById<View>(R.id.browseZipButton).isEnabled = false
-
+        Toast.makeText(this, "Not enough permission. Close app.", Toast.LENGTH_LONG ).show();
+        handler.postDelayed({finish()}, 200)
     }
 }
 
