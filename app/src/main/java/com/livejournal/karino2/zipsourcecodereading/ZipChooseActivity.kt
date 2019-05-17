@@ -75,7 +75,7 @@ class ZipChooseActivity : AppCompatActivity() {
             return et
         }
 
-    val PERMISSION_REQUEST_READ_EXTERNAL_STORAGE_ID = 1
+    val PERMISSION_REQUEST_READ_AND_WRITE_EXTERNAL_STORAGE_ID = 1
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -95,8 +95,7 @@ class ZipChooseActivity : AppCompatActivity() {
             onZipPathChosen(path)
         }
 
-        requestReadExternalStorage()
-
+        requestReadAndWriteExternalStorage()
     }
 
     private fun onZipPathChosen(path: String) {
@@ -179,25 +178,34 @@ class ZipChooseActivity : AppCompatActivity() {
     }
 
 
-    fun requestReadExternalStorage(){
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE)
-                == PackageManager.PERMISSION_GRANTED) {
+    fun requestReadAndWriteExternalStorage(){
+
+        val isAllowedPermissionReadExternalStorage = ContextCompat.checkSelfPermission(
+                this, Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED
+
+        val isAllowedPermissionWriteExternalStorage = ContextCompat.checkSelfPermission(
+                this, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED
+
+        if (isAllowedPermissionReadExternalStorage && isAllowedPermissionWriteExternalStorage) {
             return
-        } else {
-            ActivityCompat.requestPermissions(this, arrayOf(android.Manifest.permission.READ_EXTERNAL_STORAGE), PERMISSION_REQUEST_READ_EXTERNAL_STORAGE_ID)
         }
+
+        ActivityCompat.requestPermissions(this,
+                arrayOf(android.Manifest.permission.READ_EXTERNAL_STORAGE,
+                        android.Manifest.permission.WRITE_EXTERNAL_STORAGE),
+                PERMISSION_REQUEST_READ_AND_WRITE_EXTERNAL_STORAGE_ID)
+
     }
 
     val handler by lazy { Handler() }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         when (requestCode) {
-            PERMISSION_REQUEST_READ_EXTERNAL_STORAGE_ID ->{
+            PERMISSION_REQUEST_READ_AND_WRITE_EXTERNAL_STORAGE_ID ->{
                 if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     return
                 }
             }
-
         }
 
         Toast.makeText(this, "Not enough permission. Close app.", Toast.LENGTH_LONG ).show();
