@@ -179,12 +179,14 @@ class ZipChooseActivity : AppCompatActivity() {
 
 
     fun requestReadAndWriteExternalStorage(){
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE)
-                == PackageManager.PERMISSION_GRANTED) {
-            return
-        }
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                        == PackageManager.PERMISSION_GRANTED) {
+
+        val isAllowedPermissionReadExternalStorage = ContextCompat.checkSelfPermission(
+                this, Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED
+
+        val isAllowedPermissionWriteExternalStorage = ContextCompat.checkSelfPermission(
+                this, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED
+
+        if (isAllowedPermissionReadExternalStorage && isAllowedPermissionWriteExternalStorage) {
             return
         }
 
